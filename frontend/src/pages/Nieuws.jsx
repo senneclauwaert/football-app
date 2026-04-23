@@ -5,6 +5,13 @@ import Layout from '../components/Layout'
 import Icon from '../components/Icon'
 import { getNews } from '../api/news'
 
+const CAT_COLORS = {
+  match: 'var(--orange)',
+  youth: 'var(--green)',
+  club: 'var(--ink)',
+  event: 'var(--yellow)',
+}
+
 const CAT_LABELS = {
   match: 'Wedstrijd',
   youth: 'Jeugd',
@@ -22,12 +29,13 @@ export default function Nieuws() {
 
   return (
     <Layout title="Nieuws">
-      {/* Category pills */}
+      {/* Category filter */}
       {cats.length > 0 && (
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 20 }}>
           <button
             onClick={() => setCatFilter(null)}
-            style={{ padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 500, background: !catFilter ? 'var(--orange)' : 'var(--paper-2)', color: !catFilter ? '#fff' : '#666' }}
+            className={`pill ${!catFilter ? 'pill-orange' : 'pill-ghost'}`}
+            style={{ cursor: 'pointer', padding: '8px 14px' }}
           >
             Alle
           </button>
@@ -35,7 +43,8 @@ export default function Nieuws() {
             <button
               key={c}
               onClick={() => setCatFilter(catFilter === c ? null : c)}
-              style={{ padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 500, background: catFilter === c ? 'var(--orange)' : 'var(--paper-2)', color: catFilter === c ? '#fff' : '#666' }}
+              className={`pill ${catFilter === c ? 'pill-orange' : 'pill-ghost'}`}
+              style={{ cursor: 'pointer', padding: '8px 14px' }}
             >
               {CAT_LABELS[c] || c}
             </button>
@@ -44,57 +53,101 @@ export default function Nieuws() {
       )}
 
       {isLoading ? (
-        <div style={{ color: '#888', textAlign: 'center', padding: 40 }}>Laden...</div>
+        <div style={{ color: '#888', textAlign: 'center', padding: 60, fontSize: 14 }}>Laden...</div>
       ) : filtered.length === 0 ? (
-        <div style={{ color: '#888', textAlign: 'center', padding: 40 }}>Geen nieuws beschikbaar</div>
+        <div style={{
+          color: '#888', textAlign: 'center', padding: 60,
+          background: '#fff', border: '1px solid var(--line)', borderRadius: 3, fontSize: 14,
+        }}>
+          Geen nieuws beschikbaar
+        </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {filtered.map(item => (
-            <div
-              key={item.id}
-              onClick={() => navigate(`/nieuws/${item.id}`)}
-              style={{
-                background: '#fff', borderRadius: 12, padding: '18px 20px',
-                border: '1px solid var(--line)', cursor: 'pointer',
-                display: 'flex', gap: 16, alignItems: 'flex-start',
-                transition: 'box-shadow 0.15s',
-              }}
-              onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)'}
-              onMouseLeave={e => e.currentTarget.style.boxShadow = ''}
-            >
-              {/* Date */}
-              <div style={{ textAlign: 'center', minWidth: 44, flexShrink: 0 }}>
-                <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--orange)', lineHeight: 1 }}>
-                  {item.created_at ? new Date(item.created_at).getDate() : '-'}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+          {filtered.map((item, i) => {
+            const catColor = CAT_COLORS[item.category] || '#888'
+            const d = item.created_at ? new Date(item.created_at) : null
+            return (
+              <button
+                key={item.id}
+                onClick={() => navigate(`/nieuws/${item.id}`)}
+                className="card-in"
+                style={{
+                  background: '#fff',
+                  border: '1px solid var(--line)',
+                  borderRadius: 3,
+                  overflow: 'hidden',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  position: 'relative',
+                  transition: 'transform .08s, box-shadow .12s',
+                  willChange: 'transform',
+                  animationDelay: `${Math.min(i * 50, 300)}ms`,
+                }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 18px rgba(0,0,0,.07)' }}
+                onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}
+              >
+                {/* Photo placeholder */}
+                <div style={{
+                  background: 'var(--paper-2)',
+                  backgroundImage: 'repeating-linear-gradient(45deg, rgba(0,0,0,.04) 0 8px, transparent 8px 16px)',
+                  aspectRatio: '16/9',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <Icon name="news" size={28} color="#bbb" />
                 </div>
-                <div style={{ fontSize: 10, color: '#888', textTransform: 'uppercase' }}>
-                  {item.created_at ? new Date(item.created_at).toLocaleDateString('nl-BE', { month: 'short' }) : ''}
-                </div>
-              </div>
 
-              {/* Content */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                  {item.is_pinned && (
-                    <span style={{ background: 'var(--orange)', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>VAST</span>
-                  )}
-                  {item.category && (
-                    <span style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                      {CAT_LABELS[item.category] || item.category}
-                    </span>
-                  )}
-                </div>
-                <h3 style={{ fontWeight: 700, fontSize: 16, margin: '0 0 6px' }}>{item.title}</h3>
-                {item.tldr && (
-                  <p style={{ fontSize: 13, color: '#666', margin: 0, lineHeight: 1.5 }}>
-                    {item.tldr.slice(0, 150)}{item.tldr.length > 150 ? '...' : ''}
-                  </p>
+                {/* Pinned badge */}
+                {item.is_pinned && (
+                  <div style={{
+                    position: 'absolute', top: 10, right: 10,
+                    background: 'var(--orange)', color: '#000',
+                    padding: '3px 8px', borderRadius: 2,
+                    fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
+                    display: 'flex', alignItems: 'center', gap: 4,
+                  }}>
+                    <Icon name="pin" size={10} />
+                    VASTGEZET
+                  </div>
                 )}
-              </div>
 
-              <Icon name="chevronRight" size={18} color="#ccc" />
-            </div>
-          ))}
+                <div style={{ padding: '14px 16px', flex: 1 }}>
+                  {/* Category + date */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    {item.category && (
+                      <span style={{
+                        background: catColor,
+                        color: item.category === 'youth' || item.category === 'match' ? '#000' : '#fff',
+                        fontSize: 10, fontWeight: 700,
+                        padding: '2px 7px', borderRadius: 2,
+                        letterSpacing: '.08em', textTransform: 'uppercase',
+                      }}>
+                        {CAT_LABELS[item.category] || item.category}
+                      </span>
+                    )}
+                    {d && (
+                      <span className="mono" style={{ fontSize: 10, color: '#888' }}>
+                        {d.getDate()} {['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'][d.getMonth()]}
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={{ fontWeight: 700, fontSize: 15, lineHeight: 1.3, marginBottom: 6 }}>
+                    {item.title}
+                  </div>
+
+                  {item.tldr && (
+                    <div style={{ fontSize: 12, color: '#666', lineHeight: 1.45 }}>
+                      {item.tldr.slice(0, 100)}{item.tldr.length > 100 ? '...' : ''}
+                    </div>
+                  )}
+                </div>
+              </button>
+            )
+          })}
         </div>
       )}
     </Layout>

@@ -2,98 +2,112 @@ import { useNavigate } from 'react-router-dom'
 import Crest from './Crest'
 import OppCrest from './OppCrest'
 
-function formatDate(dateStr) {
+function fmtDate(dateStr) {
   if (!dateStr) return ''
   const d = new Date(dateStr)
-  return d.toLocaleDateString('nl-BE', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  const days = ['Zon', 'Maa', 'Din', 'Woe', 'Don', 'Vri', 'Zat']
+  const months = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
+  return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}`
 }
 
-function resultColor(match) {
-  if (match.status === 'live') return '#ff4d00'
+function fmtTime(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+function resultBorderColor(match) {
+  if (match.status === 'live') return 'var(--red)'
   if (match.status === 'finished') {
     const hs = match.home_score ?? 0
     const as = match.away_score ?? 0
-    if (match.is_home) return hs > as ? '#1f8a3d' : hs === as ? '#888' : '#d62828'
-    else return as > hs ? '#1f8a3d' : as === hs ? '#888' : '#d62828'
+    if (match.is_home) return hs > as ? 'var(--green)' : hs === as ? 'var(--line)' : 'var(--red)'
+    else return as > hs ? 'var(--green)' : as === hs ? 'var(--line)' : 'var(--red)'
   }
-  return '#ff6a13'
+  return 'var(--orange)'
 }
 
-export default function MatchCard({ match }) {
+export default function MatchCard({ match, compact = false }) {
   const navigate = useNavigate()
-  const color = resultColor(match)
   const isLive = match.status === 'live'
-  const hasScore = match.status === 'finished' || match.status === 'live'
+  const isFt = match.status === 'finished'
+  const borderColor = resultBorderColor(match)
 
   const homeName = match.is_home ? 'Toekomst Relegem' : match.opponent_name
   const awayName = match.is_home ? match.opponent_name : 'Toekomst Relegem'
-  const homeScore = match.home_score ?? '-'
-  const awayScore = match.away_score ?? '-'
+  const homeScore = match.home_score ?? 0
+  const awayScore = match.away_score ?? 0
 
   return (
-    <div
+    <button
       onClick={() => navigate(`/wedstrijden/${match.id}`)}
       style={{
-        display: 'flex', alignItems: 'center',
+        display: 'grid',
+        gridTemplateColumns: compact ? '56px 1fr auto' : '68px 1fr auto',
+        alignItems: 'center',
+        gap: 14,
+        padding: compact ? '10px 12px' : '14px 16px',
         background: '#fff',
         border: '1px solid var(--line)',
-        borderLeft: `4px solid ${color}`,
-        borderRadius: 8,
-        padding: '14px 16px',
+        borderLeft: `4px solid ${borderColor}`,
+        borderRadius: 3,
+        width: '100%',
+        textAlign: 'left',
         cursor: 'pointer',
-        gap: 12,
-        transition: 'box-shadow 0.15s',
+        transition: 'transform .08s, box-shadow .12s',
+        willChange: 'transform',
       }}
-      onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)'}
-      onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,.07)'; e.currentTarget.style.transform = 'translateX(2px)' }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = ''; e.currentTarget.style.transform = '' }}
     >
-      {/* Left: date / status */}
-      <div style={{ minWidth: 80, fontSize: 12, color: '#666', lineHeight: 1.4 }}>
+      {/* Left: date / status / score */}
+      <div style={{ textAlign: 'center' }}>
         {isLive ? (
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            background: '#ff4d00', color: '#fff',
-            borderRadius: 4, padding: '2px 6px', fontSize: 11, fontWeight: 700,
-          }}>
-            <span className="animate-pulse-dot" style={{ width: 6, height: 6, background: '#fff', borderRadius: '50%', display: 'inline-block' }} />
-            LIVE {match.live_minute ? `${match.live_minute}'` : ''}
+          <span className="pill pill-live live-pulse" style={{ fontSize: 10, padding: '3px 6px' }}>
+            ● {match.live_minute ? `${match.live_minute}'` : 'LIVE'}
           </span>
+        ) : isFt ? (
+          <>
+            <div className="display" style={{ fontSize: 22 }}>{homeScore}–{awayScore}</div>
+            <div style={{ fontSize: 10, color: '#888', letterSpacing: '.08em', textTransform: 'uppercase', marginTop: 1 }}>Eindstand</div>
+          </>
         ) : (
-          formatDate(match.match_date)
+          <>
+            <div className="mono" style={{ fontSize: 10, color: '#888' }}>{fmtDate(match.match_date)}</div>
+            <div className="display" style={{ fontSize: 18, marginTop: 2 }}>{fmtTime(match.match_date)}</div>
+          </>
         )}
       </div>
 
-      {/* Teams + score */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
-        {/* Home */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, justifyContent: 'flex-end' }}>
-          <span style={{ fontWeight: 600, fontSize: 14 }}>{homeName}</span>
-          {match.is_home ? <Crest size={24} /> : <OppCrest name={match.opponent_name} size={24} />}
+      {/* Middle: team names */}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: compact ? 2 : 5 }}>
+          {match.is_home ? <Crest size={20} /> : <OppCrest name={match.opponent_name} size={20} />}
+          <span style={{ fontWeight: 700, fontSize: 13 }}>{homeName}</span>
+          {match.is_home && (
+            <span className="mono" style={{ fontSize: 9, color: '#888', letterSpacing: '.1em' }}>THUIS</span>
+          )}
         </div>
-
-        {/* Score */}
-        <div style={{
-          minWidth: 56, textAlign: 'center',
-          fontFamily: 'Anton, Impact, sans-serif',
-          fontSize: 20, letterSpacing: 2,
-          color: hasScore ? '#0a0a0a' : '#aaa',
-        }}>
-          {hasScore ? `${homeScore} - ${awayScore}` : 'vs'}
-        </div>
-
-        {/* Away */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-          {match.is_home ? <OppCrest name={match.opponent_name} size={24} /> : <Crest size={24} />}
-          <span style={{ fontWeight: 600, fontSize: 14 }}>{awayName}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {match.is_home ? <OppCrest name={match.opponent_name} size={20} /> : <Crest size={20} />}
+          <span style={{ fontWeight: 700, fontSize: 13 }}>{awayName}</span>
+          {!match.is_home && (
+            <span className="mono" style={{ fontSize: 9, color: '#888', letterSpacing: '.1em' }}>UIT</span>
+          )}
         </div>
       </div>
 
-      {/* Right: venue */}
-      {match.venue && (
-        <div style={{ fontSize: 12, color: '#888', minWidth: 80, textAlign: 'right' }}>
-          {match.venue}
-        </div>
-      )}
-    </div>
+      {/* Right: competition */}
+      <div style={{ textAlign: 'right' }}>
+        {match.competition_name && (
+          <div className="mono" style={{ fontSize: 10, color: '#888', letterSpacing: '.06em', textTransform: 'uppercase' }}>
+            {match.competition_name}
+          </div>
+        )}
+        {match.status === 'scheduled' && (
+          <span className="pill pill-orange" style={{ marginTop: 4, fontSize: 10 }}>Gepland</span>
+        )}
+      </div>
+    </button>
   )
 }

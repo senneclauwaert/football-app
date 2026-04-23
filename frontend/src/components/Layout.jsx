@@ -1,5 +1,4 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
 import Icon from './Icon'
 import Crest from './Crest'
 import { useCart } from '../context/CartContext'
@@ -22,126 +21,224 @@ function SidebarLink({ to, icon, label }) {
       to={to}
       end={to === '/'}
       style={({ isActive }) => ({
-        display: 'flex', alignItems: 'center', gap: 10,
-        padding: '9px 16px',
-        borderRadius: 8,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        padding: '10px 12px',
+        borderRadius: 4,
         marginBottom: 2,
         fontSize: 14,
         fontWeight: 500,
-        color: isActive ? '#ff6a13' : '#aaa',
-        background: isActive ? 'rgba(255,106,19,0.12)' : 'transparent',
-        transition: 'background 0.15s, color 0.15s',
+        color: isActive ? '#000' : '#bbb',
+        background: isActive ? 'var(--orange)' : 'transparent',
         textDecoration: 'none',
+        position: 'relative',
+        transition: 'background .13s, color .13s, transform .1s',
+        willChange: 'transform',
       })}
+      className="sidebar-nav-item"
     >
-      <Icon name={icon} size={18} />
-      {label}
+      {({ isActive }) => (
+        <>
+          {/* Active left bar marker */}
+          {isActive && (
+            <span style={{
+              position: 'absolute',
+              left: 0, top: 6, bottom: 6,
+              width: 3,
+              background: '#000',
+              borderRadius: '0 2px 2px 0',
+              animation: 'nav-mark .22s cubic-bezier(.2,.7,.2,1) both',
+            }} />
+          )}
+          <span style={{ color: isActive ? '#000' : '#888', display: 'flex', flexShrink: 0 }}>
+            <Icon name={icon} size={16} />
+          </span>
+          {label}
+        </>
+      )}
     </NavLink>
   )
 }
 
-export default function Layout({ children, title, cartDrawerContent }) {
+export default function Layout({ children, title, onCartClick }) {
   const { count } = useCart()
   const { isAdmin } = useAuth()
   const navigate = useNavigate()
-
   return (
-    <div style={{ display: 'flex', height: '100%', minHeight: '100vh' }}>
-      {/* Sidebar - desktop */}
-      <nav style={{
-        width: 220,
-        background: '#111',
-        display: 'flex',
-        flexDirection: 'column',
-        flexShrink: 0,
-        position: 'sticky',
-        top: 0,
-        height: '100vh',
-        overflowY: 'auto',
-      }}
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--paper)' }}>
+
+      {/* ── Sidebar desktop ── */}
+      <nav
         className="sidebar-desktop"
+        style={{
+          width: 240,
+          background: '#0a0a0a',
+          display: 'flex',
+          flexDirection: 'column',
+          flexShrink: 0,
+          position: 'sticky',
+          top: 0,
+          height: '100vh',
+          overflowY: 'auto',
+        }}
       >
-        {/* Logo */}
-        <div style={{ padding: '20px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Crest size={36} />
-          <div>
-            <div style={{ color: '#ff6a13', fontSize: 13, fontFamily: 'Anton, Impact', letterSpacing: 1, lineHeight: 1 }}>TOEKOMST</div>
-            <div style={{ color: '#fff', fontSize: 12, letterSpacing: 2 }}>RELEGEM</div>
+        {/* Brand */}
+        <div style={{
+          padding: '20px 20px 18px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          borderBottom: '1px solid #1f1f1f',
+        }}>
+          <Crest size={38} />
+          <div style={{ lineHeight: 1 }}>
+            <div style={{
+              color: '#fff',
+              fontSize: 18,
+              fontFamily: 'Anton, Impact, sans-serif',
+              letterSpacing: '.02em',
+            }}>
+              Toekomst
+            </div>
+            <div style={{ fontSize: 10, color: '#888', letterSpacing: '.15em', textTransform: 'uppercase', marginTop: 3 }}>
+              KV Relegem · 1952
+            </div>
           </div>
         </div>
-        <div style={{ height: 1, background: '#222', margin: '0 16px 12px' }} />
-        {/* Nav */}
-        <div style={{ padding: '0 8px', flex: 1 }}>
+
+        {/* Nav group */}
+        <div style={{ padding: '12px 10px', flex: 1 }}>
+          <div style={{
+            fontSize: 10, letterSpacing: '.18em', textTransform: 'uppercase',
+            color: '#555', padding: '12px 10px 8px',
+          }}>
+            Club
+          </div>
           {NAV.map(n => <SidebarLink key={n.to} {...n} />)}
         </div>
-        {/* Bottom */}
-        <div style={{ padding: '12px 8px', borderTop: '1px solid #222' }}>
+
+        {/* Footer */}
+        <div style={{
+          padding: '12px 20px',
+          borderTop: '1px solid #1f1f1f',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontSize: 11,
+          color: '#666',
+        }}>
+          <span>v1.0 · 2026</span>
           {isAdmin && (
             <NavLink
               to="/admin"
-              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', borderRadius: 8, fontSize: 14, color: '#888', textDecoration: 'none' }}
+              style={{
+                background: '#1a1a1a',
+                border: '1px solid #2a2a2a',
+                padding: '4px 10px',
+                borderRadius: 3,
+                fontSize: 10,
+                letterSpacing: '.1em',
+                textTransform: 'uppercase',
+                color: 'var(--orange)',
+                textDecoration: 'none',
+                transition: 'background .12s',
+              }}
             >
-              <Icon name="settings" size={18} />
-              Admin
+              Admin →
             </NavLink>
           )}
         </div>
       </nav>
 
-      {/* Main */}
+      {/* ── Main column ── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+
         {/* Topbar */}
         <header style={{
-          display: 'flex', alignItems: 'center',
-          padding: '0 24px',
-          height: 56,
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 28px',
+          height: 58,
           borderBottom: '1px solid var(--line)',
           background: 'var(--paper)',
-          position: 'sticky', top: 0, zIndex: 10,
+          position: 'sticky',
+          top: 0,
+          zIndex: 20,
+          gap: 16,
         }}>
-          <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, flex: 1 }}>{title}</h1>
-          {/* Cart button */}
-          <button
-            onClick={() => navigate('/shop')}
-            style={{
-              position: 'relative',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              width: 40, height: 40, borderRadius: '50%',
-              background: 'var(--paper-2)',
-            }}
-          >
-            <Icon name="cart" size={18} />
-            {count > 0 && (
-              <span style={{
-                position: 'absolute', top: 2, right: 2,
-                background: '#ff6a13', color: '#fff',
-                width: 16, height: 16, borderRadius: '50%',
-                fontSize: 10, fontWeight: 700,
+          <h1 style={{
+            margin: 0,
+            fontFamily: 'Anton, Impact, sans-serif',
+            fontSize: 24,
+            fontWeight: 400,
+            letterSpacing: '.01em',
+            textTransform: 'uppercase',
+            flex: 1,
+          }}>
+            {title}
+          </h1>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button
+              style={{
+                width: 36, height: 36,
+                borderRadius: 4,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                {count}
-              </span>
-            )}
-          </button>
+                background: 'var(--paper-2)',
+                transition: 'background .12s, transform .1s',
+                position: 'relative',
+              }}
+              title="Winkelwagen"
+              onClick={() => {
+                if (typeof onCartClick === 'function') onCartClick()
+                else navigate('/shop')
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+              onMouseLeave={e => e.currentTarget.style.transform = ''}
+            >
+              <Icon name="cart" size={16} />
+              {count > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: 3, right: 3,
+                  minWidth: 16, height: 16,
+                  background: 'var(--orange)',
+                  color: '#000',
+                  borderRadius: 8,
+                  fontSize: 10, fontWeight: 700,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: '0 3px',
+                }}>
+                  {count}
+                </span>
+              )}
+            </button>
+          </div>
         </header>
 
-        {/* Content */}
-        <main style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
+        {/* Page content */}
+        <main
+          style={{ flex: 1, padding: '28px', overflowY: 'auto', paddingBottom: 80 }}
+          className="page-in"
+        >
           {children}
         </main>
       </div>
 
-      {/* Mobile bottom nav */}
-      <nav style={{
-        display: 'none',
-        position: 'fixed', bottom: 0, left: 0, right: 0,
-        background: '#111',
-        zIndex: 20,
-        borderTop: '1px solid #222',
-      }}
+      {/* ── Mobile bottom nav ── */}
+      <nav
         className="sidebar-mobile"
+        style={{
+          display: 'none',
+          position: 'fixed',
+          bottom: 0, left: 0, right: 0,
+          background: '#0a0a0a',
+          zIndex: 50,
+          borderTop: '1px solid #1f1f1f',
+        }}
       >
-        {NAV.slice(0, 5).map(n => (
+        {NAV.slice(0, 6).map(n => (
           <NavLink
             key={n.to}
             to={n.to}
@@ -150,21 +247,36 @@ export default function Layout({ children, title, cartDrawerContent }) {
               display: 'flex', flexDirection: 'column', alignItems: 'center',
               padding: '8px 4px',
               flex: 1,
-              fontSize: 10, color: isActive ? '#ff6a13' : '#888',
+              fontSize: 9,
+              fontWeight: 600,
+              letterSpacing: '.06em',
+              textTransform: 'uppercase',
+              color: isActive ? 'var(--orange)' : '#777',
               textDecoration: 'none',
+              transition: 'color .12s',
             })}
           >
             <Icon name={n.icon} size={20} />
-            {n.label}
+            <span style={{ marginTop: 3 }}>{n.label}</span>
           </NavLink>
         ))}
       </nav>
 
       <style>{`
-        @media (max-width: 768px) {
+        .sidebar-nav-item:hover:not([class*="active"]) {
+          background: #1a1a1a !important;
+          color: var(--paper) !important;
+          transform: translateX(2px);
+        }
+        .sidebar-nav-item:hover:not([class*="active"]) span:first-of-type {
+          color: #ccc !important;
+        }
+        @media (max-width: 900px) {
           .sidebar-desktop { display: none !important; }
-          .sidebar-mobile { display: flex !important; }
-          main { padding-bottom: 72px !important; }
+          .sidebar-mobile  { display: flex !important; }
+          main { padding-bottom: 80px !important; }
+          header { padding: 0 16px !important; }
+          main { padding: 16px !important; }
         }
       `}</style>
     </div>

@@ -1,10 +1,7 @@
 import { Navigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
 
-export default function ProtectedRoute({ children, adminOnly = false }) {
-  const { user, isAdmin } = useAuth()
-
-  if (!user) return <Navigate to="/login" replace />
-  if (adminOnly && !isAdmin) return <Navigate to="/" replace />
+export default function ProtectedRoute({ children }) {
+  const unlocked = localStorage.getItem('tr_admin_unlocked') === 'true'
+  if (!unlocked) return <Navigate to="/" replace />
   return children
 }

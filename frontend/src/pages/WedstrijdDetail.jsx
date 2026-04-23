@@ -8,17 +8,6 @@ import OppCrest from '../components/OppCrest'
 import Icon from '../components/Icon'
 import { getMatch } from '../api/matches'
 
-const EVENT_ICONS = {
-  goal: '⚽',
-  own_goal: '⚽ (eigen doel)',
-  penalty: '⚽ (penalty)',
-  yellow_card: '🟨',
-  red_card: '🟥',
-  second_yellow: '🟨🟥',
-  sub_in: '↑',
-  sub_out: '↓',
-}
-
 const EVENT_LABELS = {
   goal: 'Doelpunt',
   own_goal: 'Eigen doel',
@@ -30,9 +19,34 @@ const EVENT_LABELS = {
   sub_out: 'Wissel uit',
 }
 
-function formatDate(d) {
+function CardIcon({ type }) {
+  if (type === 'goal' || type === 'penalty') {
+    return <span style={{ fontSize: 16 }}>⚽</span>
+  }
+  if (type === 'own_goal') {
+    return <span style={{ fontSize: 16, opacity: 0.7 }}>⚽</span>
+  }
+  if (type === 'yellow_card') {
+    return <div style={{ width: 12, height: 16, background: '#f5c518', borderRadius: 1, flexShrink: 0 }} />
+  }
+  if (type === 'red_card' || type === 'second_yellow') {
+    return <div style={{ width: 12, height: 16, background: '#d62828', borderRadius: 1, flexShrink: 0 }} />
+  }
+  if (type === 'sub_in') return <span style={{ color: 'var(--green)', fontWeight: 700, fontSize: 16 }}>↑</span>
+  if (type === 'sub_out') return <span style={{ color: 'var(--red)', fontWeight: 700, fontSize: 16 }}>↓</span>
+  return <span>•</span>
+}
+
+function fmtDateLong(d) {
   if (!d) return ''
-  return new Date(d).toLocaleDateString('nl-BE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return new Date(d).toLocaleDateString('nl-BE', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  })
+}
+
+function fmtTime(d) {
+  if (!d) return ''
+  return new Date(d).toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit' })
 }
 
 export default function WedstrijdDetail() {
@@ -45,164 +59,361 @@ export default function WedstrijdDetail() {
     queryFn: () => getMatch(id),
   })
 
-  if (isLoading) return <Layout title="Wedstrijd"><div style={{ padding: 40, color: '#888', textAlign: 'center' }}>Laden...</div></Layout>
-  if (error || !match) return <Layout title="Wedstrijd"><div style={{ padding: 40, color: '#888', textAlign: 'center' }}>Wedstrijd niet gevonden</div></Layout>
+  if (isLoading) {
+    return (
+      <Layout title="Wedstrijd">
+        <div style={{ color: '#888', textAlign: 'center', padding: 60, fontSize: 14 }}>Laden...</div>
+      </Layout>
+    )
+  }
+  if (error || !match) {
+    return (
+      <Layout title="Wedstrijd">
+        <div style={{ color: '#888', textAlign: 'center', padding: 60, fontSize: 14 }}>Wedstrijd niet gevonden</div>
+      </Layout>
+    )
+  }
 
-  const homeName = match.is_home ? 'Toekomst Relegem' : match.opponent_name
-  const awayName = match.is_home ? match.opponent_name : 'Toekomst Relegem'
-  const hasScore = match.status === 'finished' || match.status === 'live'
   const isLive = match.status === 'live'
+  const isFt = match.status === 'finished'
+  const hasScore = isFt || isLive
+  const isUpcoming = !isFt && !isLive
 
-  const goals = match.events?.filter(e => ['goal', 'penalty'].includes(e.type)) || []
+  const goals = match.events?.filter(e => ['goal', 'penalty', 'own_goal'].includes(e.type)) || []
   const ourGoals = goals.filter(e => e.is_our_team)
   const theirGoals = goals.filter(e => !e.is_our_team)
+  const cards = match.events?.filter(e => ['yellow_card', 'red_card', 'second_yellow'].includes(e.type)) || []
 
   return (
     <Layout title="Wedstrijd">
-      <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#888', marginBottom: 16, fontSize: 14 }}>
-        <Icon name="chevronLeft" size={16} /> Terug
+      <button
+        onClick={() => navigate(-1)}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          color: '#888', marginBottom: 20, fontSize: 13,
+          transition: 'color .12s',
+        }}
+        onMouseEnter={e => e.currentTarget.style.color = 'var(--ink)'}
+        onMouseLeave={e => e.currentTarget.style.color = '#888'}
+      >
+        <Icon name="chevronLeft" size={14} /> Alle wedstrijden
       </button>
 
-      {/* Match header */}
-      <div style={{
-        background: '#111', borderRadius: 12, padding: '28px 24px',
-        color: '#fff', marginBottom: 24, textAlign: 'center',
-      }}>
-        {isLive && (
-          <div style={{ marginBottom: 10 }}>
-            <span style={{ background: '#ff4d00', color: '#fff', fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 12 }}>
-              LIVE {match.live_minute ? `${match.live_minute}'` : ''}
-            </span>
+      {/* ── Match header ── */}
+      <div
+        className="card-in"
+        style={{
+          background: '#0a0a0a',
+          color: '#fff',
+          borderRadius: 3,
+          marginBottom: 24,
+          overflow: 'hidden',
+        }}
+      >
+        {/* Competition bar */}
+        {match.competition_name && (
+          <div style={{
+            background: '#1a1a1a',
+            padding: '7px 20px',
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: '.15em',
+            textTransform: 'uppercase',
+            color: '#888',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
+            <span>{match.competition_name}</span>
+            {match.venue && <span>{match.venue}</span>}
           </div>
         )}
-        <div style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>
-          {formatDate(match.match_date)}
-          {match.venue && <span style={{ marginLeft: 8 }}>• {match.venue}</span>}
-        </div>
 
-        {/* Teams + score */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
-          {/* Home */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-            {match.is_home ? <Crest size={48} /> : <OppCrest name={match.opponent_name} size={48} />}
-            <div style={{ fontWeight: 700, fontSize: 16 }}>{homeName}</div>
-            <div style={{ fontSize: 12, color: '#888' }}>
+        <div style={{
+          padding: '24px 24px 20px',
+          display: 'grid',
+          gridTemplateColumns: '1fr auto 1fr',
+          alignItems: 'center',
+          gap: 16,
+        }}>
+          {/* Home team */}
+          <div style={{ textAlign: 'center' }}>
+            {match.is_home ? <Crest size={56} /> : <OppCrest name={match.opponent_name} size={56} />}
+            <div className="display" style={{ fontSize: 15, marginTop: 8, color: 'var(--orange)' }}>
+              {match.is_home ? 'Toekomst Relegem' : match.opponent_name}
+            </div>
+            <div style={{ fontSize: 11, color: '#666', marginTop: 2 }}>
               {match.is_home ? 'Thuis' : 'Uit'}
             </div>
           </div>
 
-          {/* Score */}
-          <div style={{ textAlign: 'center', padding: '0 20px' }}>
-            <div className="display" style={{ fontSize: 52, color: '#fff' }}>
-              {hasScore ? `${match.home_score ?? 0} - ${match.away_score ?? 0}` : 'vs'}
-            </div>
-            {!hasScore && <div style={{ fontSize: 13, color: '#888', marginTop: 4 }}>
-              {match.status === 'scheduled' ? 'Gepland' : match.status}
-            </div>}
+          {/* Score / time block */}
+          <div style={{ textAlign: 'center', minWidth: 120 }}>
+            {isLive && (
+              <div className="pill pill-live live-pulse" style={{ marginBottom: 8 }}>
+                ● LIVE {match.live_minute ? `${match.live_minute}'` : ''}
+              </div>
+            )}
+            {isFt && (
+              <div className="mono" style={{ fontSize: 10, color: '#888', letterSpacing: '.15em', marginBottom: 4 }}>
+                EINDSTAND
+              </div>
+            )}
+            {isUpcoming && (
+              <div className="mono" style={{ fontSize: 10, color: '#888', letterSpacing: '.15em', marginBottom: 4 }}>
+                {match.match_date ? new Date(match.match_date).toLocaleDateString('nl-BE', { weekday: 'short', day: 'numeric', month: 'short' }).toUpperCase() : ''}
+              </div>
+            )}
+
+            {hasScore ? (
+              <div className="display score-pop" style={{ fontSize: 54 }}>
+                {match.home_score ?? 0}
+                <span style={{ color: '#444' }}>–</span>
+                {match.away_score ?? 0}
+              </div>
+            ) : (
+              <div className="display" style={{ fontSize: 40, color: 'var(--orange)' }}>
+                {fmtTime(match.match_date)}
+              </div>
+            )}
           </div>
 
-          {/* Away */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
-            {match.is_home ? <OppCrest name={match.opponent_name} size={48} /> : <Crest size={48} />}
-            <div style={{ fontWeight: 700, fontSize: 16 }}>{awayName}</div>
-            <div style={{ fontSize: 12, color: '#888' }}>
+          {/* Away team */}
+          <div style={{ textAlign: 'center' }}>
+            {match.is_home ? <OppCrest name={match.opponent_name} size={56} /> : <Crest size={56} />}
+            <div className="display" style={{ fontSize: 15, marginTop: 8 }}>
+              {match.is_home ? match.opponent_name : 'Toekomst Relegem'}
+            </div>
+            <div style={{ fontSize: 11, color: '#666', marginTop: 2 }}>
               {match.is_home ? 'Uit' : 'Thuis'}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: 'flex', borderBottom: '1px solid var(--line)', marginBottom: 20 }}>
-        {['overzicht', 'opstelling', 'events'].map(t => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            style={{
-              padding: '10px 20px', fontWeight: 600, fontSize: 14, textTransform: 'capitalize',
-              borderBottom: tab === t ? '2px solid var(--orange)' : '2px solid transparent',
-              color: tab === t ? 'var(--orange)' : '#666', marginBottom: -1,
-            }}
-          >
-            {t === 'overzicht' ? 'Overzicht' : t === 'opstelling' ? 'Opstelling' : 'Events'}
-          </button>
-        ))}
+      {/* ── Tabs ── */}
+      <div className="tab-bar">
+        <button className={`tab-btn ${tab === 'overzicht' ? 'active' : ''}`} onClick={() => setTab('overzicht')}>
+          Overzicht
+        </button>
+        <button className={`tab-btn ${tab === 'opstelling' ? 'active' : ''}`} onClick={() => setTab('opstelling')}>
+          Opstelling
+        </button>
+        <button className={`tab-btn ${tab === 'events' ? 'active' : ''}`} onClick={() => setTab('events')}>
+          Events
+        </button>
       </div>
 
-      {/* Tab content */}
+      {/* ── Overzicht ── */}
       {tab === 'overzicht' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-          {/* Our goals */}
-          {ourGoals.length > 0 && (
-            <div>
-              <h3 style={{ fontSize: 13, fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
-                Doelpunten TR
-              </h3>
-              {ourGoals.map(e => (
-                <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                  <span style={{ fontSize: 20 }}>⚽</span>
-                  <div>
-                    <div style={{ fontWeight: 600 }}>{e.player_name || 'Onbekend'}</div>
-                    {e.minute && <div style={{ fontSize: 12, color: '#888' }}>{e.minute}'</div>}
-                  </div>
-                </div>
-              ))}
+        <div className="page-in">
+          {isUpcoming && (
+            <div style={{
+              background: '#fff',
+              border: '1px solid var(--line)',
+              borderRadius: 3,
+              padding: '28px 24px',
+              textAlign: 'center',
+            }}>
+              <div className="display" style={{ fontSize: 22 }}>{fmtDateLong(match.match_date)}</div>
+              <div className="mono" style={{ fontSize: 13, color: '#888', marginTop: 6 }}>
+                Aftrap {fmtTime(match.match_date)}
+              </div>
+              <button
+                className="btn btn-orange"
+                style={{ marginTop: 16 }}
+              >
+                <Icon name="calendar" size={15} /> Toevoegen aan agenda
+              </button>
             </div>
           )}
 
-          {/* Their goals */}
-          {theirGoals.length > 0 && (
-            <div>
-              <h3 style={{ fontSize: 13, fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
-                Doelpunten {match.opponent_name}
-              </h3>
-              {theirGoals.map(e => (
-                <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                  <span style={{ fontSize: 20 }}>⚽</span>
-                  <div>
-                    <div style={{ fontWeight: 600 }}>{e.player_name || 'Onbekend'}</div>
-                    {e.minute && <div style={{ fontSize: 12, color: '#888' }}>{e.minute}'</div>}
+          {(ourGoals.length > 0 || theirGoals.length > 0) && (
+            <div style={{
+              background: '#fff',
+              border: '1px solid var(--line)',
+              borderRadius: 3,
+              overflow: 'hidden',
+              marginTop: 16,
+            }}>
+              <div style={{
+                padding: '12px 18px',
+                borderBottom: '1px solid var(--line)',
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '.15em',
+                textTransform: 'uppercase',
+                color: '#888',
+              }}>
+                Doelpunten
+              </div>
+              <div style={{ padding: '12px 18px' }}>
+                {goals.map((e, i) => (
+                  <div
+                    key={e.id || i}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr auto 1fr',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '8px 0',
+                      borderBottom: i < goals.length - 1 ? '1px solid var(--line)' : 'none',
+                    }}
+                  >
+                    <div style={{ textAlign: 'right', fontSize: 14 }}>
+                      {e.is_our_team && (
+                        <span style={{ fontWeight: 600 }}>
+                          {e.player_name || 'Onbekend'}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      minWidth: 70, justifyContent: 'center',
+                    }}>
+                      <span style={{ fontSize: 16 }}>⚽</span>
+                      <span className="mono" style={{ fontSize: 12, fontWeight: 700 }}>
+                        {e.minute}'
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 14 }}>
+                      {!e.is_our_team && (
+                        <span style={{ fontWeight: 600 }}>
+                          {e.player_name || 'Onbekend'}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+            </div>
+          )}
+
+          {cards.length > 0 && (
+            <div style={{
+              background: '#fff',
+              border: '1px solid var(--line)',
+              borderRadius: 3,
+              overflow: 'hidden',
+              marginTop: 16,
+            }}>
+              <div style={{
+                padding: '12px 18px',
+                borderBottom: '1px solid var(--line)',
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '.15em',
+                textTransform: 'uppercase',
+                color: '#888',
+              }}>
+                Kaarten
+              </div>
+              <div style={{ padding: '12px 18px' }}>
+                {cards.map((e, i) => (
+                  <div
+                    key={e.id || i}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr auto 1fr',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '8px 0',
+                      borderBottom: i < cards.length - 1 ? '1px solid var(--line)' : 'none',
+                    }}
+                  >
+                    <div style={{ textAlign: 'right', fontSize: 14 }}>
+                      {e.is_our_team && (
+                        <span style={{ fontWeight: 600 }}>{e.player_name || 'Onbekend'}</span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+                      <CardIcon type={e.type} />
+                      <span className="mono" style={{ fontSize: 12, fontWeight: 700 }}>{e.minute}'</span>
+                    </div>
+                    <div style={{ fontSize: 14 }}>
+                      {!e.is_our_team && (
+                        <span style={{ fontWeight: 600 }}>{e.player_name || 'Onbekend'}</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
           {/* Man of the match */}
           {match.motm_player && (
-            <div style={{ gridColumn: '1 / -1' }}>
-              <h3 style={{ fontSize: 13, fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
-                Man van de Wedstrijd
-              </h3>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--orange-soft)', padding: '14px 16px', borderRadius: 10 }}>
-                <Icon name="star" size={24} color="var(--orange)" />
-                <span style={{ fontWeight: 700, fontSize: 16 }}>
+            <div style={{
+              background: 'linear-gradient(135deg, var(--orange), var(--orange-hot))',
+              padding: '18px 20px',
+              borderRadius: 3,
+              color: '#000',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              marginTop: 16,
+            }}>
+              <Icon name="star" size={28} />
+              <div>
+                <div className="mono" style={{ fontSize: 10, letterSpacing: '.15em', textTransform: 'uppercase' }}>
+                  Man van de Wedstrijd
+                </div>
+                <div className="display" style={{ fontSize: 22, marginTop: 2 }}>
                   {match.motm_player.first_name} {match.motm_player.last_name}
-                </span>
+                </div>
               </div>
             </div>
           )}
 
-          {goals.length === 0 && !match.motm_player && (
-            <div style={{ gridColumn: '1 / -1', color: '#888', textAlign: 'center', padding: 30 }}>
+          {goals.length === 0 && cards.length === 0 && !match.motm_player && !isUpcoming && (
+            <div style={{ color: '#888', textAlign: 'center', padding: 40, fontSize: 14 }}>
               Geen overzichtsdata beschikbaar
             </div>
           )}
         </div>
       )}
 
+      {/* ── Opstelling ── */}
       {tab === 'opstelling' && (
-        <div>
+        <div className="page-in">
           {match.lineups?.length > 0 ? (
             <>
-              <Pitch lineups={match.lineups} events={match.events} />
+              <div style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                marginBottom: 16,
+              }}>
+                <div>
+                  <div className="mono" style={{ fontSize: 10, color: '#888', letterSpacing: '.15em', textTransform: 'uppercase' }}>
+                    Formatie
+                  </div>
+                  <div className="display" style={{ fontSize: 22 }}>{match.formation || '4-3-3'}</div>
+                </div>
+                {isUpcoming && (
+                  <span className="pill pill-ghost">Voorlopige selectie</span>
+                )}
+              </div>
+              <Pitch lineups={match.lineups} events={match.events || []} />
               {/* Bench */}
               {match.lineups.filter(l => !l.is_starting && l.is_our_team).length > 0 && (
                 <div style={{ marginTop: 20 }}>
-                  <h3 style={{ fontSize: 13, fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Bank</h3>
+                  <div className="mono" style={{
+                    fontSize: 10, fontWeight: 700, letterSpacing: '.15em', textTransform: 'uppercase',
+                    color: '#888', marginBottom: 10,
+                  }}>
+                    Bank Toekomst Relegem
+                  </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     {match.lineups.filter(l => !l.is_starting && l.is_our_team).map((l, i) => (
-                      <span key={i} style={{ background: 'var(--paper-2)', padding: '6px 12px', borderRadius: 20, fontSize: 13 }}>
+                      <span
+                        key={i}
+                        style={{
+                          background: 'var(--paper-2)',
+                          padding: '6px 12px',
+                          borderRadius: 2,
+                          fontSize: 13,
+                          fontWeight: 500,
+                        }}
+                      >
                         {l.jersey_number ? `#${l.jersey_number} ` : ''}{l.player_name}
                       </span>
                     ))}
@@ -211,39 +422,72 @@ export default function WedstrijdDetail() {
               )}
             </>
           ) : (
-            <div style={{ color: '#888', textAlign: 'center', padding: 40 }}>Geen opstelling beschikbaar</div>
+            <div style={{ color: '#888', textAlign: 'center', padding: 40, fontSize: 14 }}>
+              Geen opstelling beschikbaar
+            </div>
           )}
         </div>
       )}
 
+      {/* ── Events ── */}
       {tab === 'events' && (
-        <div>
+        <div className="page-in">
           {match.events?.length > 0 ? (
-            <div style={{ position: 'relative', paddingLeft: 24 }}>
-              <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 2, background: 'var(--line)' }} />
-              {match.events.sort((a, b) => (a.minute || 0) - (b.minute || 0)).map(ev => (
-                <div key={ev.id} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, position: 'relative' }}>
-                  <div style={{
-                    position: 'absolute', left: -30,
-                    width: 14, height: 14, borderRadius: '50%',
-                    background: ev.is_our_team ? 'var(--orange)' : '#888',
-                    border: '2px solid var(--paper)',
-                  }} />
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 13, color: '#888', minWidth: 30 }}>{ev.minute ? `${ev.minute}'` : '-'}</span>
-                    <span style={{ fontSize: 18 }}>{EVENT_ICONS[ev.type] || '•'}</span>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: 14 }}>{EVENT_LABELS[ev.type] || ev.type}</div>
-                      <div style={{ fontSize: 12, color: '#888' }}>
-                        {ev.player_name || 'Onbekend'} • {ev.is_our_team ? 'Toekomst Relegem' : match.opponent_name}
+            <div style={{ position: 'relative', paddingLeft: 28 }}>
+              {/* Timeline line */}
+              <div style={{
+                position: 'absolute', left: 0, top: 0, bottom: 0,
+                width: 2, background: 'var(--line)',
+              }} />
+
+              {[...match.events]
+                .sort((a, b) => (a.minute || 0) - (b.minute || 0))
+                .map((ev, i) => (
+                  <div
+                    key={ev.id || i}
+                    className="card-in"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 12,
+                      marginBottom: 18,
+                      position: 'relative',
+                      animationDelay: `${i * 50}ms`,
+                    }}
+                  >
+                    {/* Timeline dot */}
+                    <div style={{
+                      position: 'absolute', left: -35,
+                      width: 14, height: 14, borderRadius: '50%',
+                      background: ev.is_our_team ? 'var(--orange)' : '#888',
+                      border: '2px solid var(--paper)',
+                      top: 4,
+                    }} />
+
+                    <span className="mono" style={{
+                      fontSize: 12, color: '#888', minWidth: 32, fontWeight: 700, paddingTop: 2,
+                    }}>
+                      {ev.minute ? `${ev.minute}'` : '–'}
+                    </span>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <CardIcon type={ev.type} />
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>
+                          {EVENT_LABELS[ev.type] || ev.type}
+                        </div>
+                        <div style={{ fontSize: 12, color: '#888', marginTop: 1 }}>
+                          {ev.player_name || 'Onbekend'} · {ev.is_our_team ? 'Toekomst Relegem' : match.opponent_name}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           ) : (
-            <div style={{ color: '#888', textAlign: 'center', padding: 40 }}>Geen events beschikbaar</div>
+            <div style={{ color: '#888', textAlign: 'center', padding: 40, fontSize: 14 }}>
+              Geen events beschikbaar
+            </div>
           )}
         </div>
       )}

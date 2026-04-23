@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
+import AdminCodeModal from './components/AdminCodeModal'
 
 // Public pages
 import Home from './pages/Home'
@@ -14,7 +15,6 @@ import Checkout from './pages/Checkout'
 import Nieuws from './pages/Nieuws'
 import NieuwsDetail from './pages/NieuwsDetail'
 import Sponsors from './pages/Sponsors'
-import Login from './pages/Login'
 
 // Admin pages
 import Dashboard from './pages/admin/Dashboard'
@@ -29,6 +29,8 @@ import AdminScraper from './pages/admin/AdminScraper'
 
 export default function App() {
   return (
+    <>
+    <AdminCodeModal />
     <Routes>
       {/* Public */}
       <Route path="/" element={<Home />} />
@@ -44,7 +46,6 @@ export default function App() {
       <Route path="/nieuws" element={<Nieuws />} />
       <Route path="/nieuws/:id" element={<NieuwsDetail />} />
       <Route path="/sponsors" element={<Sponsors />} />
-      <Route path="/login" element={<Login />} />
 
       {/* Admin */}
       <Route path="/admin" element={<ProtectedRoute adminOnly><Dashboard /></ProtectedRoute>} />
@@ -59,5 +60,6 @@ export default function App() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   )
 }
