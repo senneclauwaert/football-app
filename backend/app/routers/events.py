@@ -1,27 +1,30 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
 
 from app.database import get_db
-from app.models import Event
-from app.schemas import EventOut, EventCreate, EventUpdate
+from app.models import Event, User
+from app.schemas import EventCreate, EventOut, EventUpdate
 from app.auth import require_admin
 
 router = APIRouter()
 
 
-@router.get("", response_model=List[EventOut])
-def list_events(db: Session = Depends(get_db)):
-    return db.query(Event).filter(Event.is_published).order_by(Event.date).all()
+@router.get("", response_model=list[EventOut])
+def list_events(db: Session = Depends(get_db)) -> list[EventOut]:
+    return (
+        db.query(Event).filter(Event.is_published.is_(True)).order_by(Event.date).all()
+    )
 
 
-@router.get("/all", response_model=List[EventOut])
-def list_all_events(db: Session = Depends(get_db), _=Depends(require_admin)):
+@router.get("/all", response_model=list[EventOut])
+def list_all_events(
+    db: Session = Depends(get_db), _: User = Depends(require_admin)
+) -> list[EventOut]:
     return db.query(Event).order_by(Event.date).all()
 
 
 @router.get("/{event_id}", response_model=EventOut)
-def get_event(event_id: int, db: Session = Depends(get_db)):
+def get_event(event_id: int, db: Session = Depends(get_db)) -> EventOut:
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Evenement niet gevonden")
@@ -30,8 +33,8 @@ def get_event(event_id: int, db: Session = Depends(get_db)):
 
 @router.post("", response_model=EventOut)
 def create_event(
-    data: EventCreate, db: Session = Depends(get_db), _=Depends(require_admin)
-):
+    data: EventCreate, db: Session = Depends(get_db), _: User = Depends(require_admin)
+) -> EventOut:
     event = Event(**data.model_dump())
     db.add(event)
     db.commit()
@@ -44,8 +47,8 @@ def update_event(
     event_id: int,
     data: EventUpdate,
     db: Session = Depends(get_db),
-    _=Depends(require_admin),
-):
+    _: User = Depends(require_admin),
+) -> EventOut:
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Evenement niet gevonden")
@@ -58,8 +61,8 @@ def update_event(
 
 @router.delete("/{event_id}")
 def delete_event(
-    event_id: int, db: Session = Depends(get_db), _=Depends(require_admin)
-):
+    event_id: int, db: Session = Depends(get_db), _: User = Depends(require_admin)
+) -> dict:
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Evenement niet gevonden")

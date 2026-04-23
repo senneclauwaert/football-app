@@ -1,33 +1,37 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from typing import List
 
 from app.database import get_db
 from app.models import (
-    ScraperRun,
-    Team,
-    Player,
-    Match,
-    ShopItem,
     Event,
+    Match,
     News,
     Order,
-    Sponsor,
+    Player,
+    ScraperRun,
     ScraperStatus,
+    ShopItem,
+    Sponsor,
+    Team,
+    User,
 )
-from app.schemas import ScraperRunOut, AdminStats
+from app.schemas import AdminStats, ScraperRunOut
 from app.auth import require_admin
 
 router = APIRouter()
 
 
-@router.get("/scraper/runs", response_model=List[ScraperRunOut])
-def list_scraper_runs(db: Session = Depends(get_db), _=Depends(require_admin)):
+@router.get("/scraper/runs", response_model=list[ScraperRunOut])
+def list_scraper_runs(
+    db: Session = Depends(get_db), _: User = Depends(require_admin)
+) -> list[ScraperRunOut]:
     return db.query(ScraperRun).order_by(ScraperRun.run_at.desc()).limit(20).all()
 
 
 @router.post("/scraper/run", response_model=ScraperRunOut)
-def trigger_scraper(db: Session = Depends(get_db), _=Depends(require_admin)):
+def trigger_scraper(
+    db: Session = Depends(get_db), _: User = Depends(require_admin)
+) -> ScraperRunOut:
     run = ScraperRun(status=ScraperStatus.running)
     db.add(run)
     db.commit()
@@ -42,14 +46,16 @@ def trigger_scraper(db: Session = Depends(get_db), _=Depends(require_admin)):
 
 
 @router.get("/stats", response_model=AdminStats)
-def get_stats(db: Session = Depends(get_db), _=Depends(require_admin)):
+def get_stats(
+    db: Session = Depends(get_db), _: User = Depends(require_admin)
+) -> AdminStats:
     return AdminStats(
-        teams=db.query(Team).filter(Team.is_active).count(),
-        players=db.query(Player).filter(Player.is_active).count(),
+        teams=db.query(Team).filter(Team.is_active.is_(True)).count(),
+        players=db.query(Player).filter(Player.is_active.is_(True)).count(),
         matches=db.query(Match).count(),
-        products=db.query(ShopItem).filter(ShopItem.is_available).count(),
-        events=db.query(Event).filter(Event.is_published).count(),
-        news=db.query(News).filter(News.is_published).count(),
+        products=db.query(ShopItem).filter(ShopItem.is_available.is_(True)).count(),
+        events=db.query(Event).filter(Event.is_published.is_(True)).count(),
+        news=db.query(News).filter(News.is_published.is_(True)).count(),
         orders=db.query(Order).count(),
-        sponsors=db.query(Sponsor).filter(Sponsor.is_active).count(),
+        sponsors=db.query(Sponsor).filter(Sponsor.is_active.is_(True)).count(),
     )

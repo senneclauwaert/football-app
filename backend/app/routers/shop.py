@@ -1,16 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
-from typing import List
 
 from app.database import get_db
-from app.models import ShopItem, Order, OrderItem
+from app.models import Order, OrderItem, ShopItem, User
 from app.schemas import (
-    ShopItemOut,
-    ShopItemCreate,
-    ShopItemUpdate,
-    OrderOut,
     OrderCreate,
+    OrderOut,
     OrderUpdate,
+    ShopItemCreate,
+    ShopItemOut,
+    ShopItemUpdate,
 )
 from app.auth import require_admin
 
@@ -20,23 +19,25 @@ router = APIRouter()
 # ── SHOP ITEMS ───────────────────────────────────────────
 
 
-@router.get("/items", response_model=List[ShopItemOut])
-def list_products(db: Session = Depends(get_db)):
+@router.get("/items", response_model=list[ShopItemOut])
+def list_products(db: Session = Depends(get_db)) -> list[ShopItemOut]:
     return (
         db.query(ShopItem)
-        .filter(ShopItem.is_available)
+        .filter(ShopItem.is_available.is_(True))
         .order_by(ShopItem.sort_order, ShopItem.name)
         .all()
     )
 
 
-@router.get("/items/all", response_model=List[ShopItemOut])
-def list_all_products(db: Session = Depends(get_db), _=Depends(require_admin)):
+@router.get("/items/all", response_model=list[ShopItemOut])
+def list_all_products(
+    db: Session = Depends(get_db), _: User = Depends(require_admin)
+) -> list[ShopItemOut]:
     return db.query(ShopItem).order_by(ShopItem.sort_order, ShopItem.name).all()
 
 
 @router.get("/items/{item_id}", response_model=ShopItemOut)
-def get_product(item_id: int, db: Session = Depends(get_db)):
+def get_product(item_id: int, db: Session = Depends(get_db)) -> ShopItemOut:
     item = db.query(ShopItem).filter(ShopItem.id == item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Product niet gevonden")
@@ -45,8 +46,10 @@ def get_product(item_id: int, db: Session = Depends(get_db)):
 
 @router.post("/items", response_model=ShopItemOut)
 def create_product(
-    data: ShopItemCreate, db: Session = Depends(get_db), _=Depends(require_admin)
-):
+    data: ShopItemCreate,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin),
+) -> ShopItemOut:
     item = ShopItem(**data.model_dump())
     db.add(item)
     db.commit()
@@ -59,8 +62,8 @@ def update_product(
     item_id: int,
     data: ShopItemUpdate,
     db: Session = Depends(get_db),
-    _=Depends(require_admin),
-):
+    _: User = Depends(require_admin),
+) -> ShopItemOut:
     item = db.query(ShopItem).filter(ShopItem.id == item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Product niet gevonden")
@@ -73,8 +76,8 @@ def update_product(
 
 @router.delete("/items/{item_id}")
 def delete_product(
-    item_id: int, db: Session = Depends(get_db), _=Depends(require_admin)
-):
+    item_id: int, db: Session = Depends(get_db), _: User = Depends(require_admin)
+) -> dict:
     item = db.query(ShopItem).filter(ShopItem.id == item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Product niet gevonden")
@@ -87,7 +90,7 @@ def delete_product(
 
 
 @router.post("/orders", response_model=OrderOut)
-def create_order(data: OrderCreate, db: Session = Depends(get_db)):
+def create_order(data: OrderCreate, db: Session = Depends(get_db)) -> OrderOut:
     total = sum(item.unit_price * item.quantity for item in data.items)
     order = Order(
         customer_name=data.customer_name,
@@ -113,8 +116,10 @@ def create_order(data: OrderCreate, db: Session = Depends(get_db)):
     return order
 
 
-@router.get("/orders", response_model=List[OrderOut])
-def list_orders(db: Session = Depends(get_db), _=Depends(require_admin)):
+@router.get("/orders", response_model=list[OrderOut])
+def list_orders(
+    db: Session = Depends(get_db), _: User = Depends(require_admin)
+) -> list[OrderOut]:
     return (
         db.query(Order)
         .options(joinedload(Order.items))
@@ -128,8 +133,8 @@ def update_order(
     order_id: int,
     data: OrderUpdate,
     db: Session = Depends(get_db),
-    _=Depends(require_admin),
-):
+    _: User = Depends(require_admin),
+) -> OrderOut:
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Bestelling niet gevonden")

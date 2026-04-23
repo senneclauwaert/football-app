@@ -1,32 +1,33 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
 
 from app.database import get_db
-from app.models import News
-from app.schemas import NewsOut, NewsCreate, NewsUpdate
+from app.models import News, User
+from app.schemas import NewsCreate, NewsOut, NewsUpdate
 from app.auth import require_admin
 
 router = APIRouter()
 
 
-@router.get("", response_model=List[NewsOut])
-def list_news(db: Session = Depends(get_db)):
+@router.get("", response_model=list[NewsOut])
+def list_news(db: Session = Depends(get_db)) -> list[NewsOut]:
     return (
         db.query(News)
-        .filter(News.is_published)
+        .filter(News.is_published.is_(True))
         .order_by(News.is_pinned.desc(), News.created_at.desc())
         .all()
     )
 
 
-@router.get("/all", response_model=List[NewsOut])
-def list_all_news(db: Session = Depends(get_db), _=Depends(require_admin)):
+@router.get("/all", response_model=list[NewsOut])
+def list_all_news(
+    db: Session = Depends(get_db), _: User = Depends(require_admin)
+) -> list[NewsOut]:
     return db.query(News).order_by(News.created_at.desc()).all()
 
 
 @router.get("/{news_id}", response_model=NewsOut)
-def get_news(news_id: int, db: Session = Depends(get_db)):
+def get_news(news_id: int, db: Session = Depends(get_db)) -> NewsOut:
     item = db.query(News).filter(News.id == news_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Nieuwsbericht niet gevonden")
@@ -35,8 +36,8 @@ def get_news(news_id: int, db: Session = Depends(get_db)):
 
 @router.post("", response_model=NewsOut)
 def create_news(
-    data: NewsCreate, db: Session = Depends(get_db), _=Depends(require_admin)
-):
+    data: NewsCreate, db: Session = Depends(get_db), _: User = Depends(require_admin)
+) -> NewsOut:
     item = News(**data.model_dump())
     db.add(item)
     db.commit()
@@ -49,8 +50,8 @@ def update_news(
     news_id: int,
     data: NewsUpdate,
     db: Session = Depends(get_db),
-    _=Depends(require_admin),
-):
+    _: User = Depends(require_admin),
+) -> NewsOut:
     item = db.query(News).filter(News.id == news_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Nieuwsbericht niet gevonden")
@@ -62,7 +63,9 @@ def update_news(
 
 
 @router.delete("/{news_id}")
-def delete_news(news_id: int, db: Session = Depends(get_db), _=Depends(require_admin)):
+def delete_news(
+    news_id: int, db: Session = Depends(get_db), _: User = Depends(require_admin)
+) -> dict:
     item = db.query(News).filter(News.id == news_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Nieuwsbericht niet gevonden")

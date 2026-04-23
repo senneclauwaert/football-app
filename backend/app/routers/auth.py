@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from pydantic import BaseModel, ConfigDict
+
 from app.database import get_db
 from app.models import User, UserRole
 from app.auth import (
@@ -9,7 +11,6 @@ from app.auth import (
     create_access_token,
     get_current_user,
 )
-from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -21,8 +22,7 @@ class UserOut(BaseModel):
     role: str
     is_active: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RegisterRequest(BaseModel):
@@ -41,7 +41,7 @@ class TokenResponse(BaseModel):
 
 
 @router.post("/register", response_model=TokenResponse)
-def register(payload: RegisterRequest, db: Session = Depends(get_db)):
+def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> TokenResponse:
     # check if email or username already exists
     if db.query(User).filter(User.email == payload.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -68,7 +68,7 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
 @router.post("/login", response_model=TokenResponse)
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
-):
+) -> TokenResponse:
     # find by email or username
     user = (
         db.query(User)
@@ -93,5 +93,5 @@ def login(
 
 
 @router.get("/me", response_model=UserOut)
-def get_me(current_user: User = Depends(get_current_user)):
+def get_me(current_user: User = Depends(get_current_user)) -> UserOut:
     return current_user

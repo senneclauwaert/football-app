@@ -1,17 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
-from typing import List, Optional
 
 from app.database import get_db
-from app.models import Match, MatchEvent, MatchLineup
+from app.models import Match, MatchEvent, MatchLineup, User
 from app.schemas import (
-    MatchOut,
     MatchCreate,
-    MatchUpdate,
-    MatchEventOut,
     MatchEventCreate,
-    MatchLineupOut,
+    MatchEventOut,
     MatchLineupEntry,
+    MatchLineupOut,
+    MatchOut,
+    MatchUpdate,
 )
 from app.auth import require_admin
 
@@ -30,12 +29,12 @@ def _load_match(match_id: int, db: Session) -> Match:
     return match
 
 
-@router.get("", response_model=List[MatchOut])
+@router.get("", response_model=list[MatchOut])
 def list_matches(
-    team_id: Optional[int] = None,
-    status: Optional[str] = None,
+    team_id: int | None = None,
+    status: str | None = None,
     db: Session = Depends(get_db),
-):
+) -> list[MatchOut]:
     q = db.query(Match).options(joinedload(Match.events), joinedload(Match.lineups))
     if team_id:
         q = q.filter(Match.team_id == team_id)
@@ -45,14 +44,14 @@ def list_matches(
 
 
 @router.get("/{match_id}", response_model=MatchOut)
-def get_match(match_id: int, db: Session = Depends(get_db)):
+def get_match(match_id: int, db: Session = Depends(get_db)) -> MatchOut:
     return _load_match(match_id, db)
 
 
 @router.post("", response_model=MatchOut)
 def create_match(
-    data: MatchCreate, db: Session = Depends(get_db), _=Depends(require_admin)
-):
+    data: MatchCreate, db: Session = Depends(get_db), _: User = Depends(require_admin)
+) -> MatchOut:
     match = Match(**data.model_dump())
     db.add(match)
     db.commit()
@@ -65,8 +64,8 @@ def update_match(
     match_id: int,
     data: MatchUpdate,
     db: Session = Depends(get_db),
-    _=Depends(require_admin),
-):
+    _: User = Depends(require_admin),
+) -> MatchOut:
     match = db.query(Match).filter(Match.id == match_id).first()
     if not match:
         raise HTTPException(status_code=404, detail="Wedstrijd niet gevonden")
@@ -78,8 +77,8 @@ def update_match(
 
 @router.delete("/{match_id}")
 def delete_match(
-    match_id: int, db: Session = Depends(get_db), _=Depends(require_admin)
-):
+    match_id: int, db: Session = Depends(get_db), _: User = Depends(require_admin)
+) -> dict:
     match = db.query(Match).filter(Match.id == match_id).first()
     if not match:
         raise HTTPException(status_code=404, detail="Wedstrijd niet gevonden")
@@ -93,8 +92,8 @@ def add_match_event(
     match_id: int,
     data: MatchEventCreate,
     db: Session = Depends(get_db),
-    _=Depends(require_admin),
-):
+    _: User = Depends(require_admin),
+) -> MatchEventOut:
     match = db.query(Match).filter(Match.id == match_id).first()
     if not match:
         raise HTTPException(status_code=404, detail="Wedstrijd niet gevonden")
@@ -110,8 +109,8 @@ def remove_match_event(
     match_id: int,
     event_id: int,
     db: Session = Depends(get_db),
-    _=Depends(require_admin),
-):
+    _: User = Depends(require_admin),
+) -> dict:
     event = (
         db.query(MatchEvent)
         .filter(MatchEvent.id == event_id, MatchEvent.match_id == match_id)
@@ -124,13 +123,13 @@ def remove_match_event(
     return {"ok": True}
 
 
-@router.put("/{match_id}/lineup", response_model=List[MatchLineupOut])
+@router.put("/{match_id}/lineup", response_model=list[MatchLineupOut])
 def replace_lineup(
     match_id: int,
-    entries: List[MatchLineupEntry],
+    entries: list[MatchLineupEntry],
     db: Session = Depends(get_db),
-    _=Depends(require_admin),
-):
+    _: User = Depends(require_admin),
+) -> list[MatchLineupOut]:
     match = db.query(Match).filter(Match.id == match_id).first()
     if not match:
         raise HTTPException(status_code=404, detail="Wedstrijd niet gevonden")

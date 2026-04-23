@@ -1,20 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
 
 from app.database import get_db
-from app.models import Sponsor
-from app.schemas import SponsorOut, SponsorCreate, SponsorUpdate
+from app.models import Sponsor, User
+from app.schemas import SponsorCreate, SponsorOut, SponsorUpdate
 from app.auth import require_admin
 
 router = APIRouter()
 
 
-@router.get("", response_model=List[SponsorOut])
-def list_sponsors(db: Session = Depends(get_db)):
+@router.get("", response_model=list[SponsorOut])
+def list_sponsors(db: Session = Depends(get_db)) -> list[SponsorOut]:
     return (
         db.query(Sponsor)
-        .filter(Sponsor.is_active)
+        .filter(Sponsor.is_active.is_(True))
         .order_by(Sponsor.sort_order, Sponsor.name)
         .all()
     )
@@ -22,8 +21,8 @@ def list_sponsors(db: Session = Depends(get_db)):
 
 @router.post("", response_model=SponsorOut)
 def create_sponsor(
-    data: SponsorCreate, db: Session = Depends(get_db), _=Depends(require_admin)
-):
+    data: SponsorCreate, db: Session = Depends(get_db), _: User = Depends(require_admin)
+) -> SponsorOut:
     sponsor = Sponsor(**data.model_dump())
     db.add(sponsor)
     db.commit()
@@ -36,8 +35,8 @@ def update_sponsor(
     sponsor_id: int,
     data: SponsorUpdate,
     db: Session = Depends(get_db),
-    _=Depends(require_admin),
-):
+    _: User = Depends(require_admin),
+) -> SponsorOut:
     sponsor = db.query(Sponsor).filter(Sponsor.id == sponsor_id).first()
     if not sponsor:
         raise HTTPException(status_code=404, detail="Sponsor niet gevonden")
@@ -50,8 +49,8 @@ def update_sponsor(
 
 @router.delete("/{sponsor_id}")
 def delete_sponsor(
-    sponsor_id: int, db: Session = Depends(get_db), _=Depends(require_admin)
-):
+    sponsor_id: int, db: Session = Depends(get_db), _: User = Depends(require_admin)
+) -> dict:
     sponsor = db.query(Sponsor).filter(Sponsor.id == sponsor_id).first()
     if not sponsor:
         raise HTTPException(status_code=404, detail="Sponsor niet gevonden")
