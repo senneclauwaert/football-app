@@ -5,7 +5,6 @@ Attached to FastAPI app lifespan so it starts/stops with the server.
 
 import logging
 import time
-from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -31,13 +30,13 @@ def _scraper_job():
     start = time.time()
     try:
         summary = run_full_sync(db)
-        run.status            = ScraperStatus.success
-        run.matches_updated   = summary.get("matches", 0)
+        run.status = ScraperStatus.success
+        run.matches_updated = summary.get("matches", 0)
         run.standings_updated = summary.get("standings", 0)
-        run.players_updated   = summary.get("players", 0)
+        run.players_updated = summary.get("players", 0)
     except Exception as exc:
         logger.exception("Scraper job failed")
-        run.status        = ScraperStatus.error
+        run.status = ScraperStatus.error
         run.error_message = str(exc)
     finally:
         run.duration_seconds = round(time.time() - start, 2)
@@ -60,13 +59,13 @@ def run_now() -> int:
     start = time.time()
     try:
         summary = run_full_sync(db)
-        run.status            = ScraperStatus.success
-        run.matches_updated   = summary.get("matches", 0)
+        run.status = ScraperStatus.success
+        run.matches_updated = summary.get("matches", 0)
         run.standings_updated = summary.get("standings", 0)
-        run.players_updated   = summary.get("players", 0)
+        run.players_updated = summary.get("players", 0)
     except Exception as exc:
         logger.exception("Manual scraper run failed")
-        run.status        = ScraperStatus.error
+        run.status = ScraperStatus.error
         run.error_message = str(exc)
     finally:
         run.duration_seconds = round(time.time() - start, 2)

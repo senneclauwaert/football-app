@@ -9,8 +9,17 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from app.models import (
-    Team, Player, Competition, Match, MatchEvent, Standing,
-    AgeGroup, CompetitionType, MatchStatus, MatchEventType, Season
+    Team,
+    Player,
+    Competition,
+    Match,
+    MatchEvent,
+    Standing,
+    AgeGroup,
+    CompetitionType,
+    MatchStatus,
+    MatchEventType,
+    Season,
 )
 from scraper import rbfa_client
 
@@ -18,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 # ── HELPERS ──────────────────────────────────────────────
+
 
 def _slugify(text: str) -> str:
     text = text.lower().strip()
@@ -37,10 +47,19 @@ def _map_age_group(name: str) -> AgeGroup:
     match = re.search(r"\bu(\d+)\b", lower)
     if match:
         age = int(match.group(1))
-        mapping = {17: AgeGroup.u17, 16: AgeGroup.u16, 15: AgeGroup.u15,
-                   13: AgeGroup.u13, 12: AgeGroup.u12, 11: AgeGroup.u11,
-                   10: AgeGroup.u10, 9: AgeGroup.u9, 8: AgeGroup.u8,
-                   7: AgeGroup.u7,  6: AgeGroup.u6}
+        mapping = {
+            17: AgeGroup.u17,
+            16: AgeGroup.u16,
+            15: AgeGroup.u15,
+            13: AgeGroup.u13,
+            12: AgeGroup.u12,
+            11: AgeGroup.u11,
+            10: AgeGroup.u10,
+            9: AgeGroup.u9,
+            8: AgeGroup.u8,
+            7: AgeGroup.u7,
+            6: AgeGroup.u6,
+        }
         if age in mapping:
             return mapping[age]
     return AgeGroup.first_team
@@ -48,26 +67,26 @@ def _map_age_group(name: str) -> AgeGroup:
 
 def _map_state(state: str) -> MatchStatus:
     mapping = {
-        "planned":            MatchStatus.scheduled,
-        "finished":           MatchStatus.finished,
-        "postponed":          MatchStatus.postponed,
-        "cancelled":          MatchStatus.cancelled,
-        "forfeitByOneTeam":   MatchStatus.finished,
-        "live":               MatchStatus.live,
+        "planned": MatchStatus.scheduled,
+        "finished": MatchStatus.finished,
+        "postponed": MatchStatus.postponed,
+        "cancelled": MatchStatus.cancelled,
+        "forfeitByOneTeam": MatchStatus.finished,
+        "live": MatchStatus.live,
     }
     return mapping.get(state, MatchStatus.scheduled)
 
 
 def _map_event_kind(kind: str) -> MatchEventType | None:
     mapping = {
-        "goal":          MatchEventType.goal,
-        "owngoal":       MatchEventType.own_goal,
-        "yellow":        MatchEventType.yellow_card,
-        "red":           MatchEventType.red_card,
-        "secondyellow":  MatchEventType.second_yellow,
-        "in":            MatchEventType.sub_in,
-        "out":           MatchEventType.sub_out,
-        "penalty":       MatchEventType.penalty,
+        "goal": MatchEventType.goal,
+        "owngoal": MatchEventType.own_goal,
+        "yellow": MatchEventType.yellow_card,
+        "red": MatchEventType.red_card,
+        "secondyellow": MatchEventType.second_yellow,
+        "in": MatchEventType.sub_in,
+        "out": MatchEventType.sub_out,
+        "penalty": MatchEventType.penalty,
     }
     return mapping.get(kind)
 
@@ -145,6 +164,7 @@ def _get_or_create_competition(db: Session, series: dict) -> Competition:
 
 # ── SYNC FUNCTIONS ────────────────────────────────────────
 
+
 def sync_teams(db: Session) -> int:
     """
     Fetch all teams for Toekomst Relegem from RBFA and upsert into DB.
@@ -197,7 +217,11 @@ def sync_players(db: Session) -> int:
             continue
 
         for p in players_data:
-            player = db.query(Player).filter_by(rbfa_player_id=p["id"], team_id=team.id).first()
+            player = (
+                db.query(Player)
+                .filter_by(rbfa_player_id=p["id"], team_id=team.id)
+                .first()
+            )
             if not player:
                 player = Player(
                     first_name=p.get("firstName", ""),
@@ -209,7 +233,7 @@ def sync_players(db: Session) -> int:
                 db.add(player)
             else:
                 player.first_name = p.get("firstName", player.first_name)
-                player.last_name  = p.get("lastName",  player.last_name)
+                player.last_name = p.get("lastName", player.last_name)
             total += 1
 
         db.commit()
@@ -249,7 +273,7 @@ def sync_matches(db: Session) -> int:
 
             # Determine home/away and opponent
             home_team_id = m["homeTeam"]["id"]
-            is_home = (home_team_id == team.rbfa_team_id)
+            is_home = home_team_id == team.rbfa_team_id
             opponent = m["awayTeam"] if is_home else m["homeTeam"]
 
             match = db.query(Match).filter_by(rbfa_match_id=rbfa_id).first()
@@ -257,12 +281,12 @@ def sync_matches(db: Session) -> int:
                 match = Match(rbfa_match_id=rbfa_id, team_id=team.id)
                 db.add(match)
 
-            match.team_id        = team.id
+            match.team_id = team.id
             match.competition_id = competition.id if competition else None
-            match.match_date     = _parse_datetime(m.get("startTime"))
-            match.status         = _map_state(m.get("state", "planned"))
-            match.is_home        = is_home
-            match.opponent_name  = opponent["name"]
+            match.match_date = _parse_datetime(m.get("startTime"))
+            match.status = _map_state(m.get("state", "planned"))
+            match.is_home = is_home
+            match.opponent_name = opponent["name"]
             match.opponent_rbfa_id = opponent["id"]
 
             total += 1
@@ -292,7 +316,9 @@ def sync_match_events(db: Session) -> int:
         try:
             detail = rbfa_client.get_match_detail(match.rbfa_match_id)
         except Exception as e:
-            logger.warning("Failed to fetch detail for match %s: %s", match.rbfa_match_id, e)
+            logger.warning(
+                "Failed to fetch detail for match %s: %s", match.rbfa_match_id, e
+            )
             continue
         if not detail:
             continue
@@ -331,9 +357,9 @@ def sync_standings(db: Session) -> int:
     Sync standings for all competitions that have matches.
     Returns number of standing rows upserted.
     """
-    competitions = db.query(Competition).filter(
-        Competition.rbfa_series_id.isnot(None)
-    ).all()
+    competitions = (
+        db.query(Competition).filter(Competition.rbfa_series_id.isnot(None)).all()
+    )
 
     total = 0
     season = _get_or_create_current_season(db)
@@ -388,10 +414,10 @@ def run_full_sync(db: Session) -> dict:
     logger.info("Starting full RBFA sync")
     summary = {}
 
-    summary["teams"]     = sync_teams(db)
-    summary["players"]   = sync_players(db)
-    summary["matches"]   = sync_matches(db)
-    summary["events"]    = sync_match_events(db)
+    summary["teams"] = sync_teams(db)
+    summary["players"] = sync_players(db)
+    summary["matches"] = sync_matches(db)
+    summary["events"] = sync_match_events(db)
     summary["standings"] = sync_standings(db)
 
     logger.info("Full sync complete: %s", summary)

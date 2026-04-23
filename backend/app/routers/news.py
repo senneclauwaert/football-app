@@ -14,7 +14,7 @@ router = APIRouter()
 def list_news(db: Session = Depends(get_db)):
     return (
         db.query(News)
-        .filter(News.is_published == True)
+        .filter(News.is_published)
         .order_by(News.is_pinned.desc(), News.created_at.desc())
         .all()
     )
@@ -34,7 +34,9 @@ def get_news(news_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=NewsOut)
-def create_news(data: NewsCreate, db: Session = Depends(get_db), _=Depends(require_admin)):
+def create_news(
+    data: NewsCreate, db: Session = Depends(get_db), _=Depends(require_admin)
+):
     item = News(**data.model_dump())
     db.add(item)
     db.commit()
@@ -43,7 +45,12 @@ def create_news(data: NewsCreate, db: Session = Depends(get_db), _=Depends(requi
 
 
 @router.put("/{news_id}", response_model=NewsOut)
-def update_news(news_id: int, data: NewsUpdate, db: Session = Depends(get_db), _=Depends(require_admin)):
+def update_news(
+    news_id: int,
+    data: NewsUpdate,
+    db: Session = Depends(get_db),
+    _=Depends(require_admin),
+):
     item = db.query(News).filter(News.id == news_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Nieuwsbericht niet gevonden")

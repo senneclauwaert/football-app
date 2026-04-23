@@ -14,14 +14,16 @@ router = APIRouter()
 def list_sponsors(db: Session = Depends(get_db)):
     return (
         db.query(Sponsor)
-        .filter(Sponsor.is_active == True)
+        .filter(Sponsor.is_active)
         .order_by(Sponsor.sort_order, Sponsor.name)
         .all()
     )
 
 
 @router.post("", response_model=SponsorOut)
-def create_sponsor(data: SponsorCreate, db: Session = Depends(get_db), _=Depends(require_admin)):
+def create_sponsor(
+    data: SponsorCreate, db: Session = Depends(get_db), _=Depends(require_admin)
+):
     sponsor = Sponsor(**data.model_dump())
     db.add(sponsor)
     db.commit()
@@ -30,7 +32,12 @@ def create_sponsor(data: SponsorCreate, db: Session = Depends(get_db), _=Depends
 
 
 @router.put("/{sponsor_id}", response_model=SponsorOut)
-def update_sponsor(sponsor_id: int, data: SponsorUpdate, db: Session = Depends(get_db), _=Depends(require_admin)):
+def update_sponsor(
+    sponsor_id: int,
+    data: SponsorUpdate,
+    db: Session = Depends(get_db),
+    _=Depends(require_admin),
+):
     sponsor = db.query(Sponsor).filter(Sponsor.id == sponsor_id).first()
     if not sponsor:
         raise HTTPException(status_code=404, detail="Sponsor niet gevonden")
@@ -42,7 +49,9 @@ def update_sponsor(sponsor_id: int, data: SponsorUpdate, db: Session = Depends(g
 
 
 @router.delete("/{sponsor_id}")
-def delete_sponsor(sponsor_id: int, db: Session = Depends(get_db), _=Depends(require_admin)):
+def delete_sponsor(
+    sponsor_id: int, db: Session = Depends(get_db), _=Depends(require_admin)
+):
     sponsor = db.query(Sponsor).filter(Sponsor.id == sponsor_id).first()
     if not sponsor:
         raise HTTPException(status_code=404, detail="Sponsor niet gevonden")

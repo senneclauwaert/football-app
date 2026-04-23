@@ -19,11 +19,18 @@ import bcrypt
 
 from app.database import SessionLocal, engine, Base
 from app.models import (
-    User, UserRole,
-    Category, Supplier, Warehouse,
-    Item, ItemStatus,
-    Order, OrderItem, OrderStatus,
-    StockMovement, MovementType,
+    User,
+    UserRole,
+    Category,
+    Supplier,
+    Warehouse,
+    Item,
+    ItemStatus,
+    Order,
+    OrderItem,
+    OrderStatus,
+    StockMovement,
+    MovementType,
 )
 
 
@@ -44,8 +51,8 @@ def parse_date(d):
 
 def map_status(s):
     return {
-        "Active":       ItemStatus.active,
-        "Backordered":  ItemStatus.backordered,
+        "Active": ItemStatus.active,
+        "Backordered": ItemStatus.backordered,
         "Discontinued": ItemStatus.discontinued,
     }.get(s, ItemStatus.active)
 
@@ -62,6 +69,7 @@ def get_prefix(category_name: str) -> str:
 
 _image_cache = {}
 
+
 def get_image_url(product_name: str, sku: str) -> str:
     if product_name in _image_cache:
         return _image_cache[product_name]
@@ -70,12 +78,12 @@ def get_image_url(product_name: str, sku: str) -> str:
         if not api_key:
             raise ValueError("No API key")
         headers = {"Authorization": api_key}
-        params  = {"query": f"{product_name} food", "per_page": 1}
-        res     = requests.get(
+        params = {"query": f"{product_name} food", "per_page": 1}
+        res = requests.get(
             "https://api.pexels.com/v1/search",
             headers=headers,
             params=params,
-            timeout=5
+            timeout=5,
         ).json()
         url = res["photos"][0]["src"]["medium"]
         _image_cache[product_name] = url
@@ -108,22 +116,22 @@ def seed():
         print("👤 Seeding users...")
         users = [
             User(
-                email    = "admin@inventory.com",
-                username = "admin",
-                password = hash_password("admin123"),
-                role     = UserRole.admin,
+                email="admin@inventory.com",
+                username="admin",
+                password=hash_password("admin123"),
+                role=UserRole.admin,
             ),
             User(
-                email    = "premium@inventory.com",
-                username = "premium",
-                password = hash_password("premium123"),
-                role     = UserRole.premium,
+                email="premium@inventory.com",
+                username="premium",
+                password=hash_password("premium123"),
+                role=UserRole.premium,
             ),
             User(
-                email    = "user@inventory.com",
-                username = "user",
-                password = hash_password("user123"),
-                role     = UserRole.normal,
+                email="user@inventory.com",
+                username="user",
+                password=hash_password("user123"),
+                role=UserRole.normal,
             ),
         ]
         db.add_all(users)
@@ -132,9 +140,24 @@ def seed():
         # ── WAREHOUSES ───────────────────────────────────
         print("🏬 Seeding warehouses...")
         warehouses = [
-            Warehouse(name="Brussels Main",   city="Brussels", address="Rue de la Loi 100, 1000 Brussels", capacity=10000),
-            Warehouse(name="Antwerp Storage", city="Antwerp",  address="Meir 50, 2000 Antwerp",            capacity=8000),
-            Warehouse(name="Ghent Hub",       city="Ghent",    address="Korenmarkt 10, 9000 Ghent",        capacity=6000),
+            Warehouse(
+                name="Brussels Main",
+                city="Brussels",
+                address="Rue de la Loi 100, 1000 Brussels",
+                capacity=10000,
+            ),
+            Warehouse(
+                name="Antwerp Storage",
+                city="Antwerp",
+                address="Meir 50, 2000 Antwerp",
+                capacity=8000,
+            ),
+            Warehouse(
+                name="Ghent Hub",
+                city="Ghent",
+                address="Korenmarkt 10, 9000 Ghent",
+                capacity=6000,
+            ),
         ]
         db.add_all(warehouses)
         db.commit()
@@ -156,13 +179,25 @@ def seed():
         # ── SUPPLIERS ────────────────────────────────────
         print("🏭 Seeding suppliers...")
         supplier_templates = {
-            "Grains & Pulses":     ["European Grains Co", "Bulk Foods BV",      "Harvest Partners"],
-            "Beverages":           ["Belgian Beverages",  "DrinkSource EU",     "Premium Drinks Ltd"],
-            "Fruits & Vegetables": ["Fresh Farm Belgium", "EuroProduce",        "Green Valley Co"],
-            "Oils & Fats":         ["Golden Oil Trading", "Mediterranean Oils", "PureFats Imports"],
-            "Dairy":               ["Belgian Dairy Co",   "Farmhouse Dairies",  "Nordic Dairy BV"],
-            "Bakery":              ["Artisan Bakers",     "Flour Power BV",     "European Bakeries"],
-            "Seafood":             ["North Sea Seafood",  "Ocean Catch EU",     "Fresh Fish Trading"],
+            "Grains & Pulses": [
+                "European Grains Co",
+                "Bulk Foods BV",
+                "Harvest Partners",
+            ],
+            "Beverages": ["Belgian Beverages", "DrinkSource EU", "Premium Drinks Ltd"],
+            "Fruits & Vegetables": [
+                "Fresh Farm Belgium",
+                "EuroProduce",
+                "Green Valley Co",
+            ],
+            "Oils & Fats": [
+                "Golden Oil Trading",
+                "Mediterranean Oils",
+                "PureFats Imports",
+            ],
+            "Dairy": ["Belgian Dairy Co", "Farmhouse Dairies", "Nordic Dairy BV"],
+            "Bakery": ["Artisan Bakers", "Flour Power BV", "European Bakeries"],
+            "Seafood": ["North Sea Seafood", "Ocean Catch EU", "Fresh Fish Trading"],
         }
 
         supplier_map = {}
@@ -171,16 +206,18 @@ def seed():
                 continue
             for sname in names:
                 sup = Supplier(
-                    name    = sname,
-                    email   = f"contact@{sname.lower().replace(' ', '')}.be",
-                    phone   = f"+32 {random.randint(2,9)} {random.randint(100,999)} {random.randint(1000,9999)}",
-                    address = random.choice([
-                        "Brussels, Belgium",
-                        "Antwerp, Belgium",
-                        "Ghent, Belgium",
-                        "Rotterdam, Netherlands",
-                        "Paris, France",
-                    ]),
+                    name=sname,
+                    email=f"contact@{sname.lower().replace(' ', '')}.be",
+                    phone=f"+32 {random.randint(2, 9)} {random.randint(100, 999)} {random.randint(1000, 9999)}",
+                    address=random.choice(
+                        [
+                            "Brussels, Belgium",
+                            "Antwerp, Belgium",
+                            "Ghent, Belgium",
+                            "Rotterdam, Netherlands",
+                            "Paris, France",
+                        ]
+                    ),
                 )
                 db.add(sup)
                 db.flush()
@@ -193,13 +230,13 @@ def seed():
         print("   fetching images from Pexels...\n")
 
         items_added = []
-        seen_skus   = set()
+        seen_skus = set()
         sku_counters = {}
 
         for i, (_, row) in enumerate(unique_products.iterrows()):
-            cat_name  = row["Catagory"]
-            cat_id    = category_map.get(cat_name)
-            prefix    = get_prefix(cat_name) if cat_name else "GEN"
+            cat_name = row["Catagory"]
+            cat_id = category_map.get(cat_name)
+            prefix = get_prefix(cat_name) if cat_name else "GEN"
 
             # generate clean SKU
             sku_counters[prefix] = sku_counters.get(prefix, 0) + 1
@@ -209,33 +246,35 @@ def seed():
                 continue
             seen_skus.add(sku)
 
-            sup_id    = random.choice(supplier_map.get(cat_name, [None]))
-            wh_id     = random.choice(warehouses).id
-            price     = parse_price(row["Unit_Price"])
-            cost      = round(price * random.uniform(0.4, 0.6), 2)
-            name      = str(row["Product_Name"]).strip()
+            sup_id = random.choice(supplier_map.get(cat_name, [None]))
+            wh_id = random.choice(warehouses).id
+            price = parse_price(row["Unit_Price"])
+            cost = round(price * random.uniform(0.4, 0.6), 2)
+            name = str(row["Product_Name"]).strip()
             image_url = get_image_url(name, sku)
 
-            print(f"   [{i+1}/{len(unique_products)}] {name} ({sku}) → {image_url[:50]}...")
+            print(
+                f"   [{i + 1}/{len(unique_products)}] {name} ({sku}) → {image_url[:50]}..."
+            )
 
             item = Item(
-                name            = name,
-                sku             = sku,
-                description     = f"{row['Product_Name']} — sourced from {row['Supplier_Name']}",
-                image_url       = image_url,
-                price           = price,
-                cost            = cost,
-                quantity        = int(row["Stock_Quantity"]),
-                reorder_level   = int(row["Reorder_Level"]),
-                reorder_qty     = int(row["Reorder_Quantity"]),
-                sales_volume    = int(row["Sales_Volume"]),
-                turnover_rate   = int(row["Inventory_Turnover_Rate"]),
-                date_received   = parse_date(row["Date_Received"]),
-                expiration_date = parse_date(row["Expiration_Date"]),
-                status          = map_status(row["Status"]),
-                category_id     = cat_id,
-                supplier_id     = sup_id,
-                warehouse_id    = wh_id,
+                name=name,
+                sku=sku,
+                description=f"{row['Product_Name']} — sourced from {row['Supplier_Name']}",
+                image_url=image_url,
+                price=price,
+                cost=cost,
+                quantity=int(row["Stock_Quantity"]),
+                reorder_level=int(row["Reorder_Level"]),
+                reorder_qty=int(row["Reorder_Quantity"]),
+                sales_volume=int(row["Sales_Volume"]),
+                turnover_rate=int(row["Inventory_Turnover_Rate"]),
+                date_received=parse_date(row["Date_Received"]),
+                expiration_date=parse_date(row["Expiration_Date"]),
+                status=map_status(row["Status"]),
+                category_id=cat_id,
+                supplier_id=sup_id,
+                warehouse_id=wh_id,
             )
             db.add(item)
             items_added.append(item)
@@ -248,14 +287,16 @@ def seed():
         movements = []
         for item in random.sample(items_added, min(200, len(items_added))):
             for _ in range(random.randint(1, 3)):
-                movements.append(StockMovement(
-                    type          = random.choice(list(MovementType)),
-                    quantity      = random.randint(1, 50),
-                    notes         = f"Auto-generated for {item.name}",
-                    item_id       = item.id,
-                    warehouse_id  = item.warehouse_id,
-                    created_by_id = users[0].id,
-                ))
+                movements.append(
+                    StockMovement(
+                        type=random.choice(list(MovementType)),
+                        quantity=random.randint(1, 50),
+                        notes=f"Auto-generated for {item.name}",
+                        item_id=item.id,
+                        warehouse_id=item.warehouse_id,
+                        created_by_id=users[0].id,
+                    )
+                )
         db.add_all(movements)
         db.commit()
 
@@ -263,9 +304,9 @@ def seed():
         print("🧾 Seeding orders...")
         for _ in range(25):
             order = Order(
-                status  = random.choice(list(OrderStatus)),
-                notes   = "Sample order",
-                user_id = random.choice([users[1].id, users[2].id]),
+                status=random.choice(list(OrderStatus)),
+                notes="Sample order",
+                user_id=random.choice([users[1].id, users[2].id]),
             )
             db.add(order)
             db.flush()
@@ -273,12 +314,14 @@ def seed():
             total = 0
             for item in random.sample(items_added, random.randint(1, 5)):
                 qty = random.randint(1, 5)
-                db.add(OrderItem(
-                    order_id   = order.id,
-                    item_id    = item.id,
-                    quantity   = qty,
-                    unit_price = item.price,
-                ))
+                db.add(
+                    OrderItem(
+                        order_id=order.id,
+                        item_id=item.id,
+                        quantity=qty,
+                        unit_price=item.price,
+                    )
+                )
                 total += item.price * qty
             order.total = round(total, 2)
         db.commit()

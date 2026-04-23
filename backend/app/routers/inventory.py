@@ -5,9 +5,9 @@ from slowapi.util import get_remote_address
 from app.database import get_db
 from app.models import Item, ItemStatus, Category, User
 from app.schemas import ItemOut, ItemUpdate, ItemCreate, PaginatedItems
-from app.auth import get_current_user, require_admin
+from app.auth import require_admin
 
-router  = APIRouter()
+router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
 
@@ -22,7 +22,7 @@ def get_prefix(category_name: str) -> str:
 
 
 def generate_sku(category_id: int, db: Session) -> str:
-    cat    = db.query(Category).filter(Category.id == category_id).first()
+    cat = db.query(Category).filter(Category.id == category_id).first()
     prefix = get_prefix(cat.name) if cat else "GEN"
 
     existing = db.query(Item).filter(Item.sku.like(f"{prefix}-%")).all()
@@ -38,16 +38,17 @@ def generate_sku(category_id: int, db: Session) -> str:
 
 # ── PUBLIC ───────────────────────────────────────────────
 
+
 @router.get("/", response_model=PaginatedItems)
 @limiter.limit("60/minute")
 def get_all_items(
-    request:     Request,
-    page:        int        = Query(1, ge=1),
-    per_page:    int        = Query(20, ge=1, le=100),
-    category_id: int        = Query(None),
-    status:      ItemStatus = Query(None),
-    search:      str        = Query(None),
-    db:          Session    = Depends(get_db),
+    request: Request,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    category_id: int = Query(None),
+    status: ItemStatus = Query(None),
+    search: str = Query(None),
+    db: Session = Depends(get_db),
 ):
     query = db.query(Item).options(
         joinedload(Item.category),
@@ -69,11 +70,16 @@ def get_all_items(
 @router.get("/{item_id}", response_model=ItemOut)
 @limiter.limit("60/minute")
 def get_item(request: Request, item_id: int, db: Session = Depends(get_db)):
-    item = db.query(Item).options(
-        joinedload(Item.category),
-        joinedload(Item.supplier),
-        joinedload(Item.warehouse),
-    ).filter(Item.id == item_id).first()
+    item = (
+        db.query(Item)
+        .options(
+            joinedload(Item.category),
+            joinedload(Item.supplier),
+            joinedload(Item.warehouse),
+        )
+        .filter(Item.id == item_id)
+        .first()
+    )
 
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -82,13 +88,14 @@ def get_item(request: Request, item_id: int, db: Session = Depends(get_db)):
 
 # ── ADMIN ONLY ───────────────────────────────────────────
 
+
 @router.post("/", response_model=ItemOut)
 @limiter.limit("30/minute")
 def create_item(
-    request:      Request,
-    payload:      ItemCreate,
-    db:           Session = Depends(get_db),
-    current_user: User   = Depends(require_admin),
+    request: Request,
+    payload: ItemCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
 ):
     data = payload.model_dump()
     if not data.get("sku"):
@@ -103,11 +110,11 @@ def create_item(
 @router.put("/{item_id}", response_model=ItemOut)
 @limiter.limit("30/minute")
 def update_item(
-    request:      Request,
-    item_id:      int,
-    payload:      ItemUpdate,
-    db:           Session = Depends(get_db),
-    current_user: User   = Depends(require_admin),
+    request: Request,
+    item_id: int,
+    payload: ItemUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
 ):
     item = db.query(Item).filter(Item.id == item_id).first()
     if not item:
@@ -122,10 +129,10 @@ def update_item(
 @router.delete("/{item_id}")
 @limiter.limit("20/minute")
 def delete_item(
-    request:      Request,
-    item_id:      int,
-    db:           Session = Depends(get_db),
-    current_user: User   = Depends(require_admin),
+    request: Request,
+    item_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
 ):
     item = db.query(Item).filter(Item.id == item_id).first()
     if not item:

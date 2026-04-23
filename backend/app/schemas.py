@@ -6,9 +6,11 @@ from decimal import Decimal
 
 # ── AUTH ─────────────────────────────────────────────────
 
+
 class LoginRequest(BaseModel):
     email: str
     password: str
+
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -19,6 +21,7 @@ class TokenResponse(BaseModel):
 
 
 # ── TEAMS ────────────────────────────────────────────────
+
 
 class TeamBase(BaseModel):
     name: str
@@ -32,8 +35,10 @@ class TeamBase(BaseModel):
     assistant_coach: Optional[str] = None
     color: Optional[str] = None
 
+
 class TeamCreate(TeamBase):
     pass
+
 
 class TeamUpdate(BaseModel):
     name: Optional[str] = None
@@ -47,6 +52,7 @@ class TeamUpdate(BaseModel):
     assistant_coach: Optional[str] = None
     color: Optional[str] = None
 
+
 class TeamOut(TeamBase):
     id: int
     player_count: Optional[int] = 0
@@ -56,6 +62,7 @@ class TeamOut(TeamBase):
 
 
 # ── PLAYERS ──────────────────────────────────────────────
+
 
 class PlayerBase(BaseModel):
     first_name: str
@@ -75,8 +82,10 @@ class PlayerBase(BaseModel):
     bio: Optional[str] = None
     joined_year: Optional[str] = None
 
+
 class PlayerCreate(PlayerBase):
     pass
+
 
 class PlayerUpdate(BaseModel):
     first_name: Optional[str] = None
@@ -96,6 +105,7 @@ class PlayerUpdate(BaseModel):
     bio: Optional[str] = None
     joined_year: Optional[str] = None
 
+
 class PlayerOut(PlayerBase):
     id: int
 
@@ -105,6 +115,7 @@ class PlayerOut(PlayerBase):
 
 # ── MATCH EVENTS ─────────────────────────────────────────
 
+
 class MatchEventBase(BaseModel):
     type: str
     minute: Optional[int] = None
@@ -112,8 +123,10 @@ class MatchEventBase(BaseModel):
     is_our_team: bool = True
     player_id: Optional[int] = None
 
+
 class MatchEventCreate(MatchEventBase):
     pass
+
 
 class MatchEventOut(MatchEventBase):
     id: int
@@ -125,6 +138,7 @@ class MatchEventOut(MatchEventBase):
 
 # ── MATCH LINEUPS ────────────────────────────────────────
 
+
 class MatchLineupEntry(BaseModel):
     player_name: Optional[str] = None
     jersey_number: Optional[int] = None
@@ -133,6 +147,7 @@ class MatchLineupEntry(BaseModel):
     is_starting: bool = True
     is_our_team: bool = True
     player_id: Optional[int] = None
+
 
 class MatchLineupOut(MatchLineupEntry):
     id: int
@@ -143,6 +158,7 @@ class MatchLineupOut(MatchLineupEntry):
 
 
 # ── MATCHES ──────────────────────────────────────────────
+
 
 class MatchBase(BaseModel):
     match_date: Optional[datetime] = None
@@ -163,8 +179,10 @@ class MatchBase(BaseModel):
     live_minute: Optional[int] = None
     motm_player_id: Optional[int] = None
 
+
 class MatchCreate(MatchBase):
     pass
+
 
 class MatchUpdate(BaseModel):
     match_date: Optional[datetime] = None
@@ -183,6 +201,7 @@ class MatchUpdate(BaseModel):
     live_minute: Optional[int] = None
     motm_player_id: Optional[int] = None
 
+
 class MatchOut(MatchBase):
     id: int
     events: List[MatchEventOut] = []
@@ -193,6 +212,7 @@ class MatchOut(MatchBase):
 
 
 # ── STANDINGS ────────────────────────────────────────────
+
 
 class StandingBase(BaseModel):
     position: Optional[int] = None
@@ -212,8 +232,10 @@ class StandingBase(BaseModel):
     competition_id: int
     season_id: int
 
+
 class StandingCreate(StandingBase):
     pass
+
 
 class StandingUpdate(BaseModel):
     position: Optional[int] = None
@@ -229,6 +251,7 @@ class StandingUpdate(BaseModel):
     is_us: Optional[bool] = None
     form: Optional[str] = None
 
+
 class StandingOut(StandingBase):
     id: int
 
@@ -237,6 +260,7 @@ class StandingOut(StandingBase):
 
 
 # ── COMPETITIONS ─────────────────────────────────────────
+
 
 class CompetitionOut(BaseModel):
     id: int
@@ -251,6 +275,7 @@ class CompetitionOut(BaseModel):
 
 # ── SHOP ─────────────────────────────────────────────────
 
+
 class ShopItemBase(BaseModel):
     name: str
     description: Optional[str] = None
@@ -263,8 +288,10 @@ class ShopItemBase(BaseModel):
     sort_order: int = 0
     color_label: Optional[str] = None
 
+
 class ShopItemCreate(ShopItemBase):
     pass
+
 
 class ShopItemUpdate(BaseModel):
     name: Optional[str] = None
@@ -278,6 +305,7 @@ class ShopItemUpdate(BaseModel):
     sort_order: Optional[int] = None
     color_label: Optional[str] = None
 
+
 class ShopItemOut(ShopItemBase):
     id: int
     created_at: Optional[datetime] = None
@@ -288,11 +316,13 @@ class ShopItemOut(ShopItemBase):
 
 # ── ORDERS ───────────────────────────────────────────────
 
+
 class OrderItemCreate(BaseModel):
     shop_item_id: int
     size: Optional[str] = None
     quantity: int
     unit_price: Decimal
+
 
 class OrderItemOut(BaseModel):
     id: int
@@ -304,6 +334,7 @@ class OrderItemOut(BaseModel):
     class Config:
         from_attributes = True
 
+
 class OrderCreate(BaseModel):
     customer_name: str
     customer_email: str
@@ -312,9 +343,11 @@ class OrderCreate(BaseModel):
     notes: Optional[str] = None
     items: List[OrderItemCreate]
 
+
 class OrderUpdate(BaseModel):
     status: Optional[str] = None
     notes: Optional[str] = None
+
 
 class OrderOut(BaseModel):
     id: int
@@ -335,6 +368,7 @@ class OrderOut(BaseModel):
 
 # ── EVENTS ───────────────────────────────────────────────
 
+
 class EventBase(BaseModel):
     title: str
     description: Optional[str] = None
@@ -347,8 +381,10 @@ class EventBase(BaseModel):
     event_type: Optional[str] = None
     price: Optional[Decimal] = None
 
+
 class EventCreate(EventBase):
     pass
+
 
 class EventUpdate(BaseModel):
     title: Optional[str] = None
@@ -362,6 +398,7 @@ class EventUpdate(BaseModel):
     event_type: Optional[str] = None
     price: Optional[Decimal] = None
 
+
 class EventOut(EventBase):
     id: int
     created_at: Optional[datetime] = None
@@ -372,6 +409,7 @@ class EventOut(EventBase):
 
 # ── NEWS ─────────────────────────────────────────────────
 
+
 class NewsBase(BaseModel):
     title: str
     category: Optional[str] = None
@@ -381,8 +419,10 @@ class NewsBase(BaseModel):
     is_pinned: bool = False
     is_published: bool = True
 
+
 class NewsCreate(NewsBase):
     pass
+
 
 class NewsUpdate(BaseModel):
     title: Optional[str] = None
@@ -392,6 +432,7 @@ class NewsUpdate(BaseModel):
     image_url: Optional[str] = None
     is_pinned: Optional[bool] = None
     is_published: Optional[bool] = None
+
 
 class NewsOut(NewsBase):
     id: int
@@ -404,6 +445,7 @@ class NewsOut(NewsBase):
 
 # ── SPONSORS ─────────────────────────────────────────────
 
+
 class SponsorBase(BaseModel):
     name: str
     tier: Optional[str] = None
@@ -413,8 +455,10 @@ class SponsorBase(BaseModel):
     is_active: bool = True
     sort_order: int = 0
 
+
 class SponsorCreate(SponsorBase):
     pass
+
 
 class SponsorUpdate(BaseModel):
     name: Optional[str] = None
@@ -425,6 +469,7 @@ class SponsorUpdate(BaseModel):
     is_active: Optional[bool] = None
     sort_order: Optional[int] = None
 
+
 class SponsorOut(SponsorBase):
     id: int
 
@@ -433,6 +478,7 @@ class SponsorOut(SponsorBase):
 
 
 # ── SCRAPER ──────────────────────────────────────────────
+
 
 class ScraperRunOut(BaseModel):
     id: int
@@ -449,6 +495,7 @@ class ScraperRunOut(BaseModel):
 
 
 # ── ADMIN STATS ──────────────────────────────────────────
+
 
 class AdminStats(BaseModel):
     teams: int

@@ -5,9 +5,13 @@ from typing import List, Optional
 from app.database import get_db
 from app.models import Match, MatchEvent, MatchLineup
 from app.schemas import (
-    MatchOut, MatchCreate, MatchUpdate,
-    MatchEventOut, MatchEventCreate,
-    MatchLineupOut, MatchLineupEntry,
+    MatchOut,
+    MatchCreate,
+    MatchUpdate,
+    MatchEventOut,
+    MatchEventCreate,
+    MatchLineupOut,
+    MatchLineupEntry,
 )
 from app.auth import require_admin
 
@@ -32,10 +36,7 @@ def list_matches(
     status: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
-    q = (
-        db.query(Match)
-        .options(joinedload(Match.events), joinedload(Match.lineups))
-    )
+    q = db.query(Match).options(joinedload(Match.events), joinedload(Match.lineups))
     if team_id:
         q = q.filter(Match.team_id == team_id)
     if status:
@@ -49,7 +50,9 @@ def get_match(match_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=MatchOut)
-def create_match(data: MatchCreate, db: Session = Depends(get_db), _=Depends(require_admin)):
+def create_match(
+    data: MatchCreate, db: Session = Depends(get_db), _=Depends(require_admin)
+):
     match = Match(**data.model_dump())
     db.add(match)
     db.commit()
@@ -58,7 +61,12 @@ def create_match(data: MatchCreate, db: Session = Depends(get_db), _=Depends(req
 
 
 @router.put("/{match_id}", response_model=MatchOut)
-def update_match(match_id: int, data: MatchUpdate, db: Session = Depends(get_db), _=Depends(require_admin)):
+def update_match(
+    match_id: int,
+    data: MatchUpdate,
+    db: Session = Depends(get_db),
+    _=Depends(require_admin),
+):
     match = db.query(Match).filter(Match.id == match_id).first()
     if not match:
         raise HTTPException(status_code=404, detail="Wedstrijd niet gevonden")
@@ -69,7 +77,9 @@ def update_match(match_id: int, data: MatchUpdate, db: Session = Depends(get_db)
 
 
 @router.delete("/{match_id}")
-def delete_match(match_id: int, db: Session = Depends(get_db), _=Depends(require_admin)):
+def delete_match(
+    match_id: int, db: Session = Depends(get_db), _=Depends(require_admin)
+):
     match = db.query(Match).filter(Match.id == match_id).first()
     if not match:
         raise HTTPException(status_code=404, detail="Wedstrijd niet gevonden")
@@ -102,9 +112,11 @@ def remove_match_event(
     db: Session = Depends(get_db),
     _=Depends(require_admin),
 ):
-    event = db.query(MatchEvent).filter(
-        MatchEvent.id == event_id, MatchEvent.match_id == match_id
-    ).first()
+    event = (
+        db.query(MatchEvent)
+        .filter(MatchEvent.id == event_id, MatchEvent.match_id == match_id)
+        .first()
+    )
     if not event:
         raise HTTPException(status_code=404, detail="Event niet gevonden")
     db.delete(event)

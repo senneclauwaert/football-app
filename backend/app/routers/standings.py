@@ -32,11 +32,15 @@ def bulk_upsert_standings(
     result = []
     for entry in entries:
         data = entry.model_dump()
-        existing = db.query(Standing).filter(
-            Standing.competition_id == data["competition_id"],
-            Standing.season_id == data["season_id"],
-            Standing.team_name == data["team_name"],
-        ).first()
+        existing = (
+            db.query(Standing)
+            .filter(
+                Standing.competition_id == data["competition_id"],
+                Standing.season_id == data["season_id"],
+                Standing.team_name == data["team_name"],
+            )
+            .first()
+        )
         if existing:
             for field, value in data.items():
                 setattr(existing, field, value)

@@ -101,3 +101,12 @@ VITE_API_URL=http://localhost:8000/api   # frontend .env
 ## E-commerce Flow
 
 Guest checkout → `POST /api/orders/` creates order (pending) + Mollie payment → user redirected to Mollie → Mollie webhook `POST /api/orders/webhook` sets status=paid → confirmation page `/shop/bedankt?order_id=X`
+
+## Quality Standards
+- **Linting**: All backend code must pass `uvx ruff check --fix --unsafe-fixes .` and `uvx ruff format .`.
+- **Typing**: Use strict Python type hints for all FastAPI dependencies and Pydantic models.
+- **Frontend**: Use Tailwind v4 utility classes; avoid custom CSS unless necessary for the Pitch SVG.
+
+
+- **Scraper Safety**: Never delete matches manually; always use the `rbfa_match_id` to sync.
+- **Lineups**: If `player_id` is null in `match_lineups`, it belongs to an opponent or a non-indexed player.

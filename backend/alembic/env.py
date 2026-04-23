@@ -1,5 +1,4 @@
 from logging.config import fileConfig
-from sqlalchemy import engine_from_config, pool
 from alembic import context
 from app.models import Base
 
@@ -22,6 +21,7 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     from app.database import engine
+
     with engine.connect() as connection:
         context.configure(
             connection=connection,

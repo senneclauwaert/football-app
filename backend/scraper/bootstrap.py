@@ -28,6 +28,7 @@ def ensure_current_season(db):
     existing = db.query(Season).filter_by(is_current=True).first()
     if not existing:
         from datetime import datetime
+
         now = datetime.now()
         if now.month >= 8:
             start, end = now.year, now.year + 1

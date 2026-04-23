@@ -31,6 +31,7 @@ def _gql(query: str, variables: dict = None) -> dict:
 
 # ── CLUB & TEAMS ─────────────────────────────────────────
 
+
 def get_club_teams() -> list[dict]:
     """Return all teams for club 2507 with id, name, clubId."""
     data = _gql("""
@@ -48,7 +49,8 @@ def get_club_teams() -> list[dict]:
 
 def get_team(team_id: str) -> dict | None:
     """Return basic team info."""
-    data = _gql("""
+    data = _gql(
+        """
         query GetTeam($teamId: ID!) {
             team(teamId: $teamId, language: nl) {
                 id
@@ -57,13 +59,16 @@ def get_team(team_id: str) -> dict | None:
                 clubName
             }
         }
-    """, {"teamId": team_id})
+    """,
+        {"teamId": team_id},
+    )
     return data.get("team")
 
 
 def get_team_members(team_id: str) -> list[dict]:
     """Return players for a team. Fields: id, firstName, lastName."""
-    data = _gql("""
+    data = _gql(
+        """
         query GetTeamMembers($teamId: ID!) {
             teamMembers(teamId: $teamId, language: nl) {
                 players {
@@ -73,19 +78,23 @@ def get_team_members(team_id: str) -> list[dict]:
                 }
             }
         }
-    """, {"teamId": team_id})
+    """,
+        {"teamId": team_id},
+    )
     members = data.get("teamMembers") or {}
     return members.get("players") or []
 
 
 # ── CALENDAR & MATCHES ───────────────────────────────────
 
+
 def get_team_calendar(team_id: str) -> list[dict]:
     """
     Return full match calendar for a team.
     Fields: id, state, startTime, homeTeam{id,name}, awayTeam{id,name}, series{id,name}
     """
-    data = _gql("""
+    data = _gql(
+        """
         query GetCalendar($teamId: ID!) {
             teamCalendar(teamId: $teamId, language: nl, sortByDate: asc) {
                 id
@@ -96,7 +105,9 @@ def get_team_calendar(team_id: str) -> list[dict]:
                 series   { id name }
             }
         }
-    """, {"teamId": team_id})
+    """,
+        {"teamId": team_id},
+    )
     return data.get("teamCalendar") or []
 
 
@@ -106,7 +117,8 @@ def get_match_detail(match_id: str) -> dict | None:
     Events structure: [{home:[{kind,minute},...], away:[{kind,minute},...]}]
     kind values: goal, owngoal, yellow, red, secondyellow, in, out
     """
-    data = _gql("""
+    data = _gql(
+        """
         query GetMatch($matchId: ID!) {
             matchDetail(matchId: $matchId, language: nl) {
                 id
@@ -122,15 +134,19 @@ def get_match_detail(match_id: str) -> dict | None:
                 }
             }
         }
-    """, {"matchId": match_id})
+    """,
+        {"matchId": match_id},
+    )
     return data.get("matchDetail")
 
 
 # ── STANDINGS ────────────────────────────────────────────
 
+
 def get_series_rankings(series_id: str) -> dict | None:
     """Return standings for a competition series."""
-    data = _gql("""
+    data = _gql(
+        """
         query GetRankings($seriesId: ID!) {
             seriesRankings(seriesId: $seriesId, language: nl) {
                 rankings {
@@ -146,17 +162,22 @@ def get_series_rankings(series_id: str) -> dict | None:
                 }
             }
         }
-    """, {"seriesId": series_id})
+    """,
+        {"seriesId": series_id},
+    )
     return data.get("seriesRankings")
 
 
 def get_series(series_id: str) -> dict | None:
-    data = _gql("""
+    data = _gql(
+        """
         query GetSeries($seriesId: ID!) {
             series(seriesId: $seriesId, language: nl) {
                 id
                 name
             }
         }
-    """, {"seriesId": series_id})
+    """,
+        {"seriesId": series_id},
+    )
     return data.get("series")

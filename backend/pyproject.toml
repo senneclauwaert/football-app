@@ -20,4 +20,5 @@ dependencies = [
     "python-jose[cryptography]>=3.3.0",
     "python-multipart>=0.0.9",
     "apscheduler>=3.10.0",
+    "ruff>=0.15.11",
 ]

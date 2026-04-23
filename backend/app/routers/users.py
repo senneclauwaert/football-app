@@ -3,11 +3,11 @@ from sqlalchemy.orm import Session
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from app.database import get_db
-from app.models import User, UserRole
+from app.models import User
 from app.schemas import UserOut, UserUpdate
 from app.auth import require_admin
 
-router  = APIRouter()
+router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
 
@@ -15,7 +15,7 @@ limiter = Limiter(key_func=get_remote_address)
 @limiter.limit("60/minute")
 def get_all_users(
     request: Request,
-    db:      Session = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
 ):
     return db.query(User).all()
@@ -26,7 +26,7 @@ def get_all_users(
 def get_user(
     request: Request,
     user_id: int,
-    db:      Session = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
 ):
     user = db.query(User).filter(User.id == user_id).first()
@@ -41,7 +41,7 @@ def update_user(
     request: Request,
     user_id: int,
     payload: UserUpdate,
-    db:      Session = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
 ):
     user = db.query(User).filter(User.id == user_id).first()
@@ -59,7 +59,7 @@ def update_user(
 def delete_user(
     request: Request,
     user_id: int,
-    db:      Session = Depends(get_db),
+    db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
 ):
     user = db.query(User).filter(User.id == user_id).first()

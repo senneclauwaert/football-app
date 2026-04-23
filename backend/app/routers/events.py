@@ -12,12 +12,7 @@ router = APIRouter()
 
 @router.get("", response_model=List[EventOut])
 def list_events(db: Session = Depends(get_db)):
-    return (
-        db.query(Event)
-        .filter(Event.is_published == True)
-        .order_by(Event.date)
-        .all()
-    )
+    return db.query(Event).filter(Event.is_published).order_by(Event.date).all()
 
 
 @router.get("/all", response_model=List[EventOut])
@@ -34,7 +29,9 @@ def get_event(event_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=EventOut)
-def create_event(data: EventCreate, db: Session = Depends(get_db), _=Depends(require_admin)):
+def create_event(
+    data: EventCreate, db: Session = Depends(get_db), _=Depends(require_admin)
+):
     event = Event(**data.model_dump())
     db.add(event)
     db.commit()
@@ -43,7 +40,12 @@ def create_event(data: EventCreate, db: Session = Depends(get_db), _=Depends(req
 
 
 @router.put("/{event_id}", response_model=EventOut)
-def update_event(event_id: int, data: EventUpdate, db: Session = Depends(get_db), _=Depends(require_admin)):
+def update_event(
+    event_id: int,
+    data: EventUpdate,
+    db: Session = Depends(get_db),
+    _=Depends(require_admin),
+):
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Evenement niet gevonden")
@@ -55,7 +57,9 @@ def update_event(event_id: int, data: EventUpdate, db: Session = Depends(get_db)
 
 
 @router.delete("/{event_id}")
-def delete_event(event_id: int, db: Session = Depends(get_db), _=Depends(require_admin)):
+def delete_event(
+    event_id: int, db: Session = Depends(get_db), _=Depends(require_admin)
+):
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Evenement niet gevonden")
