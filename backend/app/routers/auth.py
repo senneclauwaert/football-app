@@ -4,11 +4,20 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User, UserRole
 from app.auth import hash_password, verify_password, create_access_token, get_current_user
-from app.schemas import UserOut
 from pydantic import BaseModel
 from typing import Optional
 
 router = APIRouter()
+
+
+class UserOut(BaseModel):
+    id: int
+    email: str
+    username: str
+    role: str
+    is_active: bool
+    class Config:
+        from_attributes = True
 
 
 class RegisterRequest(BaseModel):
@@ -37,7 +46,7 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
         email    = payload.email,
         username = payload.username,
         password = hash_password(payload.password),
-        role     = UserRole.normal,
+        role     = UserRole.admin,
     )
     db.add(user)
     db.commit()

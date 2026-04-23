@@ -1,109 +1,63 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
-import { Toaster } from "react-hot-toast"
-import { AuthProvider, useAuth } from "./context/AuthContext"
-import { CartProvider } from "./context/CartContext"
-import ProtectedRoute from "./components/ProtectedRoute"
+import { Routes, Route, Navigate } from 'react-router-dom'
+import ProtectedRoute from './components/ProtectedRoute'
 
-import Login      from "./pages/auth/Login"
-import Register   from "./pages/auth/Register"
-import Dashboard  from "./pages/admin/Dashboard"
-import Items      from "./pages/admin/Items"
-import Users      from "./pages/admin/Users"
-import Orders     from "./pages/admin/Orders"
-import Suppliers  from "./pages/admin/Suppliers"
-import Warehouses from "./pages/admin/Warehouses"
-import Categories from "./pages/admin/Categories"
-import Movements  from "./pages/admin/Movements"
-import Home       from "./pages/Home"
-import Catalog    from "./pages/Catalog"
+// Public pages
+import Home from './pages/Home'
+import Wedstrijden from './pages/Wedstrijden'
+import WedstrijdDetail from './pages/WedstrijdDetail'
+import Klassement from './pages/Klassement'
+import Ploegen from './pages/Ploegen'
+import PloegenDetail from './pages/PloegenDetail'
+import Evenementen from './pages/Evenementen'
+import Shop from './pages/Shop'
+import Checkout from './pages/Checkout'
+import Nieuws from './pages/Nieuws'
+import NieuwsDetail from './pages/NieuwsDetail'
+import Sponsors from './pages/Sponsors'
+import Login from './pages/Login'
 
-function RootRedirect() {
-    const { user } = useAuth()
-    if (!user) return <Navigate to="/login" replace />
-    if (user.role === "admin") return <Navigate to="/admin" replace />
-    return <Navigate to="/home" replace />
-}
+// Admin pages
+import Dashboard from './pages/admin/Dashboard'
+import AdminWedstrijden from './pages/admin/AdminWedstrijden'
+import AdminPloegen from './pages/admin/AdminPloegen'
+import AdminKlassement from './pages/admin/AdminKlassement'
+import AdminShop from './pages/admin/AdminShop'
+import AdminEvenementen from './pages/admin/AdminEvenementen'
+import AdminNieuws from './pages/admin/AdminNieuws'
+import AdminSponsors from './pages/admin/AdminSponsors'
+import AdminScraper from './pages/admin/AdminScraper'
 
 export default function App() {
-    return (
-        <AuthProvider>
-            <CartProvider>
-                <BrowserRouter>
-                    <Toaster
-                        position="top-center"
-                        toastOptions={{
-                            duration: 3000,
-                            success: {
-                                style: { background: "#22c55e", color: "#fff", fontWeight: 600, fontSize: 13 },
-                                iconTheme: { primary: "#fff", secondary: "#22c55e" },
-                            },
-                            error: {
-                                style: { background: "#ef4444", color: "#fff", fontWeight: 600, fontSize: 13 },
-                                iconTheme: { primary: "#fff", secondary: "#ef4444" },
-                            },
-                        }}
-                    />
-                    <Routes>
-                        <Route path="/login"    element={<Login />} />
-                        <Route path="/register" element={<Register />} />
-                        <Route path="/"         element={<RootRedirect />} />
+  return (
+    <Routes>
+      {/* Public */}
+      <Route path="/" element={<Home />} />
+      <Route path="/wedstrijden" element={<Wedstrijden />} />
+      <Route path="/wedstrijden/:id" element={<WedstrijdDetail />} />
+      <Route path="/klassement" element={<Klassement />} />
+      <Route path="/ploegen" element={<Ploegen />} />
+      <Route path="/ploegen/:slug" element={<PloegenDetail />} />
+      <Route path="/ploegen/:slug/:playerId" element={<PloegenDetail />} />
+      <Route path="/evenementen" element={<Evenementen />} />
+      <Route path="/shop" element={<Shop />} />
+      <Route path="/shop/afrekenen" element={<Checkout />} />
+      <Route path="/nieuws" element={<Nieuws />} />
+      <Route path="/nieuws/:id" element={<NieuwsDetail />} />
+      <Route path="/sponsors" element={<Sponsors />} />
+      <Route path="/login" element={<Login />} />
 
-                        <Route path="/home" element={
-                            <ProtectedRoute>
-                                <Home />
-                            </ProtectedRoute>
-                        } />
-                        <Route path="/catalog" element={
-                            <ProtectedRoute>
-                                <Catalog />
-                            </ProtectedRoute>
-                        } />
+      {/* Admin */}
+      <Route path="/admin" element={<ProtectedRoute adminOnly><Dashboard /></ProtectedRoute>} />
+      <Route path="/admin/wedstrijden" element={<ProtectedRoute adminOnly><AdminWedstrijden /></ProtectedRoute>} />
+      <Route path="/admin/ploegen" element={<ProtectedRoute adminOnly><AdminPloegen /></ProtectedRoute>} />
+      <Route path="/admin/klassement" element={<ProtectedRoute adminOnly><AdminKlassement /></ProtectedRoute>} />
+      <Route path="/admin/shop" element={<ProtectedRoute adminOnly><AdminShop /></ProtectedRoute>} />
+      <Route path="/admin/evenementen" element={<ProtectedRoute adminOnly><AdminEvenementen /></ProtectedRoute>} />
+      <Route path="/admin/nieuws" element={<ProtectedRoute adminOnly><AdminNieuws /></ProtectedRoute>} />
+      <Route path="/admin/sponsors" element={<ProtectedRoute adminOnly><AdminSponsors /></ProtectedRoute>} />
+      <Route path="/admin/scraper" element={<ProtectedRoute adminOnly><AdminScraper /></ProtectedRoute>} />
 
-                        <Route path="/admin" element={
-                            <ProtectedRoute adminOnly>
-                                <Dashboard />
-                            </ProtectedRoute>
-                        } />
-                        <Route path="/admin/items" element={
-                            <ProtectedRoute adminOnly>
-                                <Items />
-                            </ProtectedRoute>
-                        } />
-                        <Route path="/admin/users" element={
-                            <ProtectedRoute adminOnly>
-                                <Users />
-                            </ProtectedRoute>
-                        } />
-                        <Route path="/admin/orders" element={
-                            <ProtectedRoute adminOnly>
-                                <Orders />
-                            </ProtectedRoute>
-                        } />
-                        <Route path="/admin/suppliers" element={
-                            <ProtectedRoute adminOnly>
-                                <Suppliers />
-                            </ProtectedRoute>
-                        } />
-                        <Route path="/admin/warehouses" element={
-                            <ProtectedRoute adminOnly>
-                                <Warehouses />
-                            </ProtectedRoute>
-                        } />
-                        <Route path="/admin/categories" element={
-                            <ProtectedRoute adminOnly>
-                                <Categories />
-                            </ProtectedRoute>
-                        } />
-                        <Route path="/admin/movements" element={
-                            <ProtectedRoute adminOnly>
-                                <Movements />
-                            </ProtectedRoute>
-                        } />
-
-                        <Route path="*" element={<Navigate to="/" replace />} />
-                    </Routes>
-                </BrowserRouter>
-            </CartProvider>
-        </AuthProvider>
-    )
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
 }

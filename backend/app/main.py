@@ -4,13 +4,14 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-from app.routers import inventory, auth
 
-from app.routers import inventory, users, orders, suppliers, warehouses, categories, movements
+from scraper.scheduler import lifespan
+from app.routers import auth
+from app.routers import teams, players, matches, standings, shop, events, news, sponsors, admin
 
-limiter = Limiter(default_limits=["100/minute"], key_func=get_remote_address)
+limiter = Limiter(default_limits=["200/minute"], key_func=get_remote_address)
 
-app = FastAPI(title="Inventory API")
+app = FastAPI(title="Toekomst Relegem API", lifespan=lifespan)
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -24,14 +25,17 @@ app.add_middleware(
 )
 
 app.include_router(auth.router,      prefix="/api/auth",      tags=["auth"])
-app.include_router(inventory.router,   prefix="/api/inventory",   tags=["inventory"])
-app.include_router(users.router,       prefix="/api/users",       tags=["users"])
-# app.include_router(orders.router,      prefix="/api/orders",      tags=["orders"])
-# app.include_router(suppliers.router,   prefix="/api/suppliers",   tags=["suppliers"])
-# app.include_router(warehouses.router,  prefix="/api/warehouses",  tags=["warehouses"])
-# app.include_router(categories.router,  prefix="/api/categories",  tags=["categories"])
-# app.include_router(movements.router,   prefix="/api/movements",   tags=["movements"])
+app.include_router(teams.router,     prefix="/api/teams",     tags=["teams"])
+app.include_router(players.router,   prefix="/api/players",   tags=["players"])
+app.include_router(matches.router,   prefix="/api/matches",   tags=["matches"])
+app.include_router(standings.router, prefix="/api/standings", tags=["standings"])
+app.include_router(shop.router,      prefix="/api/shop",      tags=["shop"])
+app.include_router(events.router,    prefix="/api/events",    tags=["events"])
+app.include_router(news.router,      prefix="/api/news",      tags=["news"])
+app.include_router(sponsors.router,  prefix="/api/sponsors",  tags=["sponsors"])
+app.include_router(admin.router,     prefix="/api/admin",     tags=["admin"])
+
 
 @app.get("/")
 def root():
-    return {"status": "ok"}
+    return {"status": "ok", "club": "Toekomst Relegem"}
