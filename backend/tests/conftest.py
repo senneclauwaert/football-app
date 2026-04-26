@@ -6,7 +6,7 @@ import os
 
 from app.main import app
 from app.database import Base, get_db
-import app.models  # noqa: F401 — registers all models with Base
+from app import models as _models  # noqa: F401 — registers all models with Base
 
 TEST_DB_URL = os.environ.get(
     "TEST_DATABASE_URL",
