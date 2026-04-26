@@ -26,7 +26,7 @@ from app.models import (
     Competition, CompetitionType,
     Match, MatchStatus, MatchEvent, MatchEventType, MatchLineup,
     Standing,
-    ShopItem, ShopCategory,
+    ShopItem,
     Event,
     News,
     Sponsor,
@@ -183,7 +183,6 @@ def seed() -> None:
         print("Seeding match events...")
         finished = [m for m in matches if m.status == MatchStatus.finished]
         scorer = players[9]   # Thomas Goossens
-        assist = players[7]   # Pieter Lemmens
         yc_player = players[3]  # Ruben Maes
 
         for match in finished[:3]:
