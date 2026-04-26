@@ -4,13 +4,17 @@ import Crest from './Crest'
 import { useAuth } from '../context/AuthContext'
 
 const ADMIN_NAV = [
-  { to: '/admin',              icon: 'grid',     label: 'Dashboard',    exact: true },
-  { to: '/admin/nieuws',       icon: 'news',     label: 'Nieuws' },
-  { to: '/admin/evenementen',  icon: 'party',    label: 'Evenementen' },
-  { to: '/admin/shop',         icon: 'shop',     label: 'Shop' },
-  { to: '/admin/sponsors',     icon: 'sponsors', label: 'Sponsors' },
-  { to: '/admin/wedstrijden',  icon: 'calendar', label: 'Wedstrijden' },
-  { to: '/admin/scraper',      icon: 'whistle',  label: 'Scraper' },
+  { to: '/admin',               icon: 'grid',     label: 'Dashboard',    exact: true },
+  { to: '/admin/nieuws',        icon: 'news',     label: 'Nieuws' },
+  { to: '/admin/evenementen',   icon: 'party',    label: 'Evenementen' },
+  { to: '/admin/shop',          icon: 'shop',     label: 'Shop' },
+  { to: '/admin/bestellingen',  icon: 'cart',     label: 'Bestellingen' },
+  { to: '/admin/sponsors',      icon: 'sponsors', label: 'Sponsors' },
+  { to: '/admin/wedstrijden',   icon: 'calendar', label: 'Wedstrijden' },
+  { to: '/admin/ploegen',       icon: 'users',    label: 'Ploegen' },
+  { to: '/admin/spelers',       icon: 'ball',     label: 'Spelers' },
+  { to: '/admin/klassement',    icon: 'trophy',   label: 'Klassement' },
+  { to: '/admin/scraper',       icon: 'whistle',  label: 'Scraper' },
 ]
 
 const sidebarStyle = {
@@ -88,24 +92,42 @@ export default function AdminLayout({ children }) {
               key={n.to}
               to={n.to}
               end={!!n.exact}
+              className="sidebar-nav-item"
               style={({ isActive }) => ({
                 display: 'flex',
                 alignItems: 'center',
-                gap: 10,
-                padding: '10px 14px',
-                borderRadius: 0,
+                gap: 12,
+                padding: '10px 12px',
+                borderRadius: 4,
                 marginBottom: 2,
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: 500,
-                color: isActive ? '#FF6200' : '#888',
-                background: isActive ? 'rgba(255,98,0,0.12)' : 'transparent',
+                color: isActive ? '#000' : '#bbb',
+                background: isActive ? 'var(--orange)' : 'transparent',
                 textDecoration: 'none',
-                borderLeft: isActive ? '3px solid #FF6200' : '3px solid transparent',
-                transition: 'background 0.15s, color 0.15s',
+                position: 'relative',
+                transition: 'background .13s, color .13s, transform .1s',
+                willChange: 'transform',
               })}
             >
-              <Icon name={n.icon} size={16} />
-              {n.label}
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <span style={{
+                      position: 'absolute',
+                      left: 0, top: 6, bottom: 6,
+                      width: 3,
+                      background: '#000',
+                      borderRadius: '0 2px 2px 0',
+                      animation: 'nav-mark .22s cubic-bezier(.2,.7,.2,1) both',
+                    }} />
+                  )}
+                  <span style={{ color: isActive ? '#000' : '#888', display: 'flex', flexShrink: 0 }}>
+                    <Icon name={n.icon} size={16} />
+                  </span>
+                  {n.label}
+                </>
+              )}
             </NavLink>
           ))}
         </div>
@@ -144,6 +166,17 @@ export default function AdminLayout({ children }) {
           {children}
         </main>
       </div>
+
+      <style>{`
+        .sidebar-nav-item:hover:not([class*="active"]) {
+          background: #1a1a1a !important;
+          color: var(--paper) !important;
+          transform: translateX(2px);
+        }
+        .sidebar-nav-item:hover:not([class*="active"]) span:first-of-type {
+          color: #ccc !important;
+        }
+      `}</style>
     </div>
   )
 }

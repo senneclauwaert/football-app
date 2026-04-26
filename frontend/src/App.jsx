@@ -20,12 +20,15 @@ import Sponsors from './pages/Sponsors'
 import Dashboard from './pages/admin/Dashboard'
 import AdminWedstrijden from './pages/admin/AdminWedstrijden'
 import AdminPloegen from './pages/admin/AdminPloegen'
+import AdminSpelers from './pages/admin/AdminSpelers'
 import AdminKlassement from './pages/admin/AdminKlassement'
 import AdminShop from './pages/admin/AdminShop'
 import AdminEvenementen from './pages/admin/AdminEvenementen'
 import AdminNieuws from './pages/admin/AdminNieuws'
 import AdminSponsors from './pages/admin/AdminSponsors'
+import AdminBestellingen from './pages/admin/AdminBestellingen'
 import AdminScraper from './pages/admin/AdminScraper'
+import AdminOpstelling from './pages/admin/AdminOpstelling'
 
 export default function App() {
   return (
@@ -51,12 +54,15 @@ export default function App() {
       <Route path="/admin" element={<ProtectedRoute adminOnly><Dashboard /></ProtectedRoute>} />
       <Route path="/admin/wedstrijden" element={<ProtectedRoute adminOnly><AdminWedstrijden /></ProtectedRoute>} />
       <Route path="/admin/ploegen" element={<ProtectedRoute adminOnly><AdminPloegen /></ProtectedRoute>} />
+      <Route path="/admin/spelers" element={<ProtectedRoute adminOnly><AdminSpelers /></ProtectedRoute>} />
       <Route path="/admin/klassement" element={<ProtectedRoute adminOnly><AdminKlassement /></ProtectedRoute>} />
+      <Route path="/admin/bestellingen" element={<ProtectedRoute adminOnly><AdminBestellingen /></ProtectedRoute>} />
       <Route path="/admin/shop" element={<ProtectedRoute adminOnly><AdminShop /></ProtectedRoute>} />
       <Route path="/admin/evenementen" element={<ProtectedRoute adminOnly><AdminEvenementen /></ProtectedRoute>} />
       <Route path="/admin/nieuws" element={<ProtectedRoute adminOnly><AdminNieuws /></ProtectedRoute>} />
       <Route path="/admin/sponsors" element={<ProtectedRoute adminOnly><AdminSponsors /></ProtectedRoute>} />
       <Route path="/admin/scraper" element={<ProtectedRoute adminOnly><AdminScraper /></ProtectedRoute>} />
+      <Route path="/admin/wedstrijden/:id/opstelling" element={<ProtectedRoute adminOnly><AdminOpstelling /></ProtectedRoute>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

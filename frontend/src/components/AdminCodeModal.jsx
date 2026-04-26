@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-
-const ADMIN_CODE = 'admin123'
+import client from '../api/client'
 
 export default function AdminCodeModal() {
   const [open, setOpen] = useState(false)
-  const [code, setCode] = useState('')
-  const [error, setError] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(false)
   const inputRef = useRef(null)
   const navigate = useNavigate()
 
@@ -15,8 +16,9 @@ export default function AdminCodeModal() {
       if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 't') {
         e.preventDefault()
         setOpen(true)
-        setCode('')
-        setError(false)
+        setEmail('')
+        setPassword('')
+        setError(null)
       }
       if (e.key === 'Escape') setOpen(false)
     }
@@ -28,15 +30,28 @@ export default function AdminCodeModal() {
     if (open) setTimeout(() => inputRef.current?.focus(), 50)
   }, [open])
 
-  const submit = () => {
-    if (code === ADMIN_CODE) {
+  const submit = async () => {
+    if (!email || !password) return
+    setLoading(true)
+    setError(null)
+    try {
+      const params = new URLSearchParams()
+      params.append('username', email)
+      params.append('password', password)
+      const res = await client.post('/auth/login', params, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      })
+      const { access_token, user } = res.data
+      localStorage.setItem('tr_token', access_token)
+      localStorage.setItem('tr_user', JSON.stringify(user))
       localStorage.setItem('tr_admin_unlocked', 'true')
+      client.defaults.headers.common['Authorization'] = `Bearer ${access_token}`
       setOpen(false)
       navigate('/admin')
-    } else {
-      setError(true)
-      setCode('')
-      setTimeout(() => setError(false), 1200)
+    } catch {
+      setError('Verkeerde inloggegevens')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -55,33 +70,33 @@ export default function AdminCodeModal() {
         <p className="font-anton text-white text-xl uppercase tracking-wider">Admin toegang</p>
         <input
           ref={inputRef}
-          type="password"
-          value={code}
-          onChange={(e) => { setCode(e.target.value); setError(false) }}
+          type="email"
+          value={email}
+          onChange={(e) => { setEmail(e.target.value); setError(null) }}
           onKeyDown={(e) => e.key === 'Enter' && submit()}
-          placeholder="Voer code in"
+          placeholder="E-mailadres"
           className="bg-zinc-800 border border-zinc-600 text-white px-4 py-3 text-sm outline-none focus:border-orange-500 transition-colors"
-          style={{
-            borderRadius: 0,
-            animation: error ? 'shake 0.3s ease' : undefined,
-          }}
+          style={{ borderRadius: 0 }}
         />
-        {error && <p className="text-red-400 text-xs -mt-2">Verkeerde code</p>}
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => { setPassword(e.target.value); setError(null) }}
+          onKeyDown={(e) => e.key === 'Enter' && submit()}
+          placeholder="Wachtwoord"
+          className="bg-zinc-800 border border-zinc-600 text-white px-4 py-3 text-sm outline-none focus:border-orange-500 transition-colors"
+          style={{ borderRadius: 0 }}
+        />
+        {error && <p className="text-red-400 text-xs -mt-2">{error}</p>}
         <button
           onClick={submit}
-          className="bg-orange-500 hover:bg-orange-600 text-white font-anton uppercase tracking-wider py-3 text-sm transition-colors"
+          disabled={loading}
+          className="bg-orange-500 hover:bg-orange-600 text-white font-anton uppercase tracking-wider py-3 text-sm transition-colors disabled:opacity-60"
           style={{ borderRadius: 0 }}
         >
-          Doorgaan
+          {loading ? 'Bezig...' : 'Inloggen'}
         </button>
       </div>
-      <style>{`
-        @keyframes shake {
-          0%,100% { transform: translateX(0) }
-          25% { transform: translateX(-6px) }
-          75% { transform: translateX(6px) }
-        }
-      `}</style>
     </div>
   )
 }
