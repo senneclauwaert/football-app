@@ -313,6 +313,8 @@ def sync_match_events(db: Session) -> int:
 
     updated = 0
     for match in finished:
+        if not match.rbfa_match_id:
+            continue
         try:
             detail = rbfa_client.get_match_detail(match.rbfa_match_id)
         except Exception as e:
