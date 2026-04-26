@@ -68,8 +68,14 @@ function getEventBadges(playerId, playerName, events) {
   return badges
 }
 
-function PitchPlayer({ x, y, number, isHome, badges = [] }) {
-  const bg          = isHome ? '#ff6a13' : '#1a1a1a'
+function lastName(fullName) {
+  if (!fullName) return ''
+  const parts = fullName.trim().split(' ')
+  return parts[parts.length - 1].toUpperCase()
+}
+
+function PitchPlayer({ x, y, number, name, isHome, badges = [] }) {
+  const bg          = isHome ? '#ff6a13' : '#111'
   const borderColor = isHome ? '#000'    : '#ff6a13'
 
   return (
@@ -85,54 +91,73 @@ function PitchPlayer({ x, y, number, isHome, badges = [] }) {
       pointerEvents: 'none',
       animation: 'pitch-player-in .35s cubic-bezier(.2,.8,.2,1) both',
     }}>
-      {/* Jersey number above the circle */}
-      <div style={{
-        fontFamily: 'Anton, Impact, sans-serif',
-        fontSize: 10,
-        fontWeight: 700,
-        color: '#fff',
-        textShadow: '0 1px 3px rgba(0,0,0,.95)',
-        lineHeight: 1,
-        marginBottom: 3,
-        minWidth: 16,
-        textAlign: 'center',
-      }}>
-        {number != null ? number : ''}
-      </div>
-
-      {/* Player circle */}
+      {/* Circle with jersey number inside */}
       <div style={{
         position: 'relative',
-        width: 26,
-        height: 26,
+        width: 34,
+        height: 34,
         borderRadius: '50%',
         background: bg,
-        border: `2px solid ${borderColor}`,
-        boxShadow: '0 2px 8px rgba(0,0,0,.65)',
+        border: `2.5px solid ${borderColor}`,
+        boxShadow: '0 3px 12px rgba(0,0,0,.75)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
       }}>
+        <span style={{
+          fontFamily: 'Anton, Impact, sans-serif',
+          fontSize: 13,
+          color: '#fff',
+          lineHeight: 1,
+          userSelect: 'none',
+        }}>
+          {number != null ? number : ''}
+        </span>
+
         {badges.includes('goal') && (
           <div style={{
-            position: 'absolute', top: -7, right: -7,
-            width: 14, height: 14, borderRadius: '50%',
+            position: 'absolute', top: -8, right: -8,
+            width: 16, height: 16, borderRadius: '50%',
             background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 8, border: '1px solid #ccc', zIndex: 1,
+            fontSize: 9, border: '1px solid #ccc', zIndex: 1,
           }}>⚽</div>
         )}
         {badges.includes('yellow') && !badges.includes('red') && (
           <div style={{
-            position: 'absolute', top: -4, left: -5,
-            width: 8, height: 11, background: '#f5c518',
+            position: 'absolute', top: -5, left: -6,
+            width: 9, height: 12, background: '#f5c518',
             borderRadius: 1, border: '1px solid #000', zIndex: 1,
           }} />
         )}
         {(badges.includes('red') || badges.includes('own_goal')) && (
           <div style={{
-            position: 'absolute', top: -4, left: -5,
-            width: 8, height: 11, background: '#d62828',
+            position: 'absolute', top: -5, left: -6,
+            width: 9, height: 12, background: '#d62828',
             borderRadius: 1, border: '1px solid #000', zIndex: 1,
           }} />
         )}
       </div>
+
+      {/* Last name label below circle */}
+      {name && (
+        <div style={{
+          marginTop: 4,
+          fontSize: 8,
+          fontWeight: 700,
+          color: '#fff',
+          textShadow: '0 1px 5px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,1)',
+          lineHeight: 1,
+          maxWidth: 56,
+          textAlign: 'center',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          letterSpacing: 0.4,
+        }}>
+          {lastName(name)}
+        </div>
+      )}
     </div>
   )
 }
@@ -159,7 +184,7 @@ export default function Pitch({ lineups = [], events = [], formation = '4-3-3' }
   }
 
   return (
-    <div style={{ position: 'relative', width: '100%', maxWidth: 380, margin: '0 auto' }}>
+    <div style={{ position: 'relative', width: '100%', maxWidth: 480, margin: '0 auto' }}>
       <div style={{
         position: 'relative',
         width: '100%',
@@ -167,7 +192,7 @@ export default function Pitch({ lineups = [], events = [], formation = '4-3-3' }
         background: 'linear-gradient(180deg, #27713a 0%, #1f5c2e 50%, #27713a 100%)',
         borderRadius: 6,
         overflow: 'hidden',
-        boxShadow: '0 4px 24px rgba(0,0,0,.5)',
+        boxShadow: '0 6px 32px rgba(0,0,0,.55)',
       }}>
         {/* Alternating pitch stripes */}
         {Array.from({ length: 10 }).map((_, i) => (
@@ -185,7 +210,7 @@ export default function Pitch({ lineups = [], events = [], formation = '4-3-3' }
           style={{
             position: 'absolute', inset: 0,
             width: '100%', height: '100%',
-            stroke: 'rgba(255,255,255,.4)',
+            stroke: 'rgba(255,255,255,.45)',
             strokeWidth: .35,
             fill: 'none',
           }}
@@ -206,7 +231,7 @@ export default function Pitch({ lineups = [], events = [], formation = '4-3-3' }
           <path d="M64 104 A3 3 0 0 1 67 101" />
         </svg>
 
-        {/* Away players (top half) — only if data exists */}
+        {/* Away players (top half) */}
         {awayStarters.map((entry, i) => {
           const { screenX, screenY } = resolveAway(entry, i)
           const badges = getEventBadges(entry.player_id, entry.player_name, events)
@@ -216,6 +241,7 @@ export default function Pitch({ lineups = [], events = [], formation = '4-3-3' }
               x={screenX}
               y={Math.min(Math.max(screenY, 3), 48)}
               number={entry.jersey_number}
+              name={entry.player_name}
               isHome={false}
               badges={badges}
             />
@@ -235,6 +261,7 @@ export default function Pitch({ lineups = [], events = [], formation = '4-3-3' }
               x={screenX}
               y={Math.min(Math.max(screenY, 52), 97)}
               number={entry?.jersey_number ?? null}
+              name={entry?.player_name ?? null}
               isHome={true}
               badges={badges}
             />
