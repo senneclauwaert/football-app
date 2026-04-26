@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Player, Team
-from app.schemas import TeamCreate, TeamOut, TeamUpdate
+from app.models import Competition, Match, Player, Team
+from app.schemas import CompetitionOut, TeamCreate, TeamOut, TeamUpdate
 from app.auth import require_admin
 
 router = APIRouter()
@@ -24,6 +24,17 @@ def list_teams(db: Session = Depends(get_db)) -> list[TeamOut]:
         )
         result.append(out)
     return result
+
+
+@router.get("/{team_id}/competitions", response_model=list[CompetitionOut])
+def get_team_competitions(team_id: int, db: Session = Depends(get_db)) -> list[CompetitionOut]:
+    return (
+        db.query(Competition)
+        .join(Match, Match.competition_id == Competition.id)
+        .filter(Match.team_id == team_id, Competition.id.isnot(None))
+        .distinct()
+        .all()
+    )
 
 
 @router.get("/{slug}", response_model=TeamOut)
