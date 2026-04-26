@@ -396,13 +396,10 @@ export default function WedstrijdDetail() {
             </p>
           ) : (
             <>
-              {/* Formation label + upcoming badge */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{
-                    fontFamily: 'Anton, Impact, sans-serif',
-                    fontSize: 28, color: 'var(--ink)', letterSpacing: 1,
-                  }}>
+              {/* Formation bar */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontFamily: 'Anton, Impact, sans-serif', fontSize: 26, color: 'var(--ink)', letterSpacing: 1 }}>
                     {match.formation || '—'}
                   </span>
                   <span style={{ fontSize: 11, color: '#888', fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase' }}>
@@ -412,97 +409,73 @@ export default function WedstrijdDetail() {
                 {isUpcoming && <span className="pill pill-ghost">Voorlopige selectie</span>}
               </div>
 
-              {/* Pitch — full width */}
-              <Pitch
-                lineups={match.lineups || []}
-                events={match.events || []}
-                formation={match.formation || '4-3-3'}
-              />
+              {/* ── Three-column: our players | pitch | their players ── */}
+              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
 
-              {/* ── Basiself — two columns ── */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: 0,
-                marginTop: 24,
-                background: '#fff',
-                border: '1px solid var(--line)',
-                borderRadius: 3,
-                overflow: 'hidden',
-              }}>
-                {/* Our team header */}
-                <div style={{
-                  padding: '10px 16px',
-                  background: 'var(--orange)',
-                  borderBottom: '1px solid rgba(0,0,0,.1)',
-                }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#000', textTransform: 'uppercase', letterSpacing: '.1em' }}>
+                {/* Our team */}
+                <div style={{ flex: '0 0 120px', minWidth: 0 }}>
+                  <div style={{
+                    fontSize: 10, fontWeight: 700, color: 'var(--orange)',
+                    textTransform: 'uppercase', letterSpacing: '.08em',
+                    marginBottom: 10, paddingBottom: 6,
+                    borderBottom: '2px solid var(--orange)',
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  }}>
                     Toekomst Relegem
                   </div>
-                </div>
-                {/* Opponent header */}
-                <div style={{
-                  padding: '10px 16px',
-                  background: '#1a1a1a',
-                  borderBottom: '1px solid rgba(255,255,255,.08)',
-                  borderLeft: '1px solid rgba(255,255,255,.06)',
-                }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: '.1em' }}>
-                    {match.opponent_name || 'Tegenstander'}
-                  </div>
-                </div>
-
-                {/* Player rows — left */}
-                <div>
                   {ourStarters.map((l, i) => (
                     <div key={i} style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      padding: '10px 16px',
-                      borderBottom: i < ourStarters.length - 1 ? '1px solid var(--line)' : 'none',
-                      background: i % 2 === 0 ? '#fff' : '#fafaf9',
+                      display: 'flex', alignItems: 'baseline', gap: 7,
+                      marginBottom: 9,
                     }}>
                       <span style={{
                         fontFamily: 'Anton, Impact, sans-serif',
-                        fontSize: 16,
-                        color: 'var(--orange)',
-                        minWidth: 26,
-                        textAlign: 'center',
-                        flexShrink: 0,
+                        fontSize: 14, color: 'var(--orange)',
+                        minWidth: 20, flexShrink: 0, lineHeight: 1,
                       }}>
-                        {l.jersey_number ?? '—'}
+                        {l.jersey_number ?? '–'}
                       </span>
-                      <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--ink)', lineHeight: 1.3 }}>
+                      <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)', lineHeight: 1.25, wordBreak: 'break-word' }}>
                         {l.player_name || '–'}
                       </span>
                     </div>
                   ))}
                 </div>
 
-                {/* Player rows — right */}
-                <div style={{ borderLeft: '1px solid var(--line)' }}>
+                {/* Pitch */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <Pitch
+                    lineups={match.lineups || []}
+                    events={match.events || []}
+                    formation={match.formation || '4-3-3'}
+                  />
+                </div>
+
+                {/* Their team */}
+                <div style={{ flex: '0 0 120px', minWidth: 0, textAlign: 'right' }}>
+                  <div style={{
+                    fontSize: 10, fontWeight: 700, color: '#888',
+                    textTransform: 'uppercase', letterSpacing: '.08em',
+                    marginBottom: 10, paddingBottom: 6,
+                    borderBottom: '2px solid #888',
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  }}>
+                    {match.opponent_name || 'Tegenstander'}
+                  </div>
                   {oppStarters.map((l, i) => (
                     <div key={i} style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      padding: '10px 16px',
-                      borderBottom: i < oppStarters.length - 1 ? '1px solid var(--line)' : 'none',
-                      background: i % 2 === 0 ? '#fff' : '#fafaf9',
+                      display: 'flex', alignItems: 'baseline', gap: 7,
+                      marginBottom: 9, justifyContent: 'flex-end',
                     }}>
+                      <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)', lineHeight: 1.25, wordBreak: 'break-word' }}>
+                        {l.player_name || '–'}
+                      </span>
                       <span style={{
                         fontFamily: 'Anton, Impact, sans-serif',
-                        fontSize: 16,
-                        color: '#aaa',
-                        minWidth: 26,
-                        textAlign: 'center',
-                        flexShrink: 0,
+                        fontSize: 14, color: '#888',
+                        minWidth: 20, flexShrink: 0, lineHeight: 1, textAlign: 'right',
                       }}>
-                        {l.jersey_number ?? '—'}
-                      </span>
-                      <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--ink)', lineHeight: 1.3 }}>
-                        {l.player_name || '–'}
+                        {l.jersey_number ?? '–'}
                       </span>
                     </div>
                   ))}
