@@ -1,13 +1,12 @@
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { login } from "../../api/auth"
 import { useAuth } from "../../context/AuthContext"
 
 export default function Login() {
     const [form,    setForm]    = useState({ username: "", password: "" })
     const [error,   setError]   = useState("")
     const [loading, setLoading] = useState(false)
-    const { saveAuth } = useAuth()
+    const { login } = useAuth()
     const navigate = useNavigate()
 
     async function handleSubmit(e) {
@@ -15,16 +14,14 @@ export default function Login() {
         setError("")
         setLoading(true)
         try {
-            const data = await login(form.username, form.password)
-            console.log(data)
-            saveAuth(data)
-            if (data.user.role === "admin") {
+            const userData = await login(form.username, form.password)
+            if (userData.role === "admin") {
                 navigate("/admin")
             } else {
-                navigate("/home")
+                navigate("/")
             }
         } catch (err) {
-            setError(err.message)
+            setError("Ongeldig e-mailadres of wachtwoord")
         } finally {
             setLoading(false)
         }
