@@ -27,7 +27,9 @@ def list_teams(db: Session = Depends(get_db)) -> list[TeamOut]:
 
 
 @router.get("/{team_id}/competitions", response_model=list[CompetitionOut])
-def get_team_competitions(team_id: int, db: Session = Depends(get_db)) -> list[CompetitionOut]:
+def get_team_competitions(
+    team_id: int, db: Session = Depends(get_db)
+) -> list[CompetitionOut]:
     return (
         db.query(Competition)
         .join(Match, Match.competition_id == Competition.id)

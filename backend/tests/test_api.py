@@ -29,7 +29,9 @@ def test_list_standings_empty(client):
 
 
 def test_login_invalid_credentials(client):
-    r = client.post("/api/auth/login", json={"email": "fake@fake.com", "password": "wrong"})
+    r = client.post(
+        "/api/auth/login", json={"email": "fake@fake.com", "password": "wrong"}
+    )
     assert r.status_code == 401
 
 
