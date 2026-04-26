@@ -49,6 +49,7 @@ export default function Home() {
         {/* diagonal stripe accent */}
         <div style={{
           position: 'absolute',
+          padding: 4 ,
           top: 0, right: 0, bottom: 0,
           width: '40%',
           background: 'repeating-linear-gradient(135deg, #ff6a13 0 30px, #0a0a0a 30px 60px)',
@@ -68,11 +69,11 @@ export default function Home() {
               fontSize: 11, color: 'var(--orange)',
               letterSpacing: '.2em', marginBottom: 12,
             }}>
-              KV TOEKOMST RELEGEM · 1952
+              TOEKOMST RELEGEM · 1952
             </div>
             <div className="display" style={{ fontSize: 52, lineHeight: .9, marginBottom: 14 }}>
               Welkom bij<br />
-              <span style={{ color: 'var(--orange)' }}>de Oranje-Zwarten</span>
+              <span style={{ color: 'var(--orange)' }}>Toekomst Relegem</span>
             </div>
             <p style={{ color: '#ccc', fontSize: 14, margin: '0 0 20px', maxWidth: 480, lineHeight: 1.5 }}>
               Alles over je favoriete club. Wedstrijden, ploegen, fanshop en evenementen — op één plek.

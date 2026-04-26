@@ -7,6 +7,7 @@ import Crest from '../components/Crest'
 import OppCrest from '../components/OppCrest'
 import Icon from '../components/Icon'
 import { getMatch } from '../api/matches'
+import { getPlayers } from '../api/players'
 
 const EVENT_LABELS = {
   goal: 'Doelpunt',
@@ -78,6 +79,13 @@ export default function WedstrijdDetail() {
   const isFt = match.status === 'finished'
   const hasScore = isFt || isLive
   const isUpcoming = !isFt && !isLive
+
+  const ourStarters = [...(match.lineups || [])]
+    .filter(l => l.is_our_team && l.is_starting)
+    .sort((a, b) => (b.jersey_number ?? 0) - (a.jersey_number ?? 0))
+  const oppStarters = [...(match.lineups || [])]
+    .filter(l => !l.is_our_team && l.is_starting)
+    .sort((a, b) => (b.jersey_number ?? 0) - (a.jersey_number ?? 0))
 
   const goals = match.events?.filter(e => ['goal', 'penalty', 'own_goal'].includes(e.type)) || []
   const ourGoals = goals.filter(e => e.is_our_team)
@@ -376,55 +384,113 @@ export default function WedstrijdDetail() {
       {/* ── Opstelling ── */}
       {tab === 'opstelling' && (
         <div className="page-in">
-          {match.lineups?.length > 0 ? (
-            <>
-              <div style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                marginBottom: 16,
-              }}>
-                <div>
-                  <div className="mono" style={{ fontSize: 10, color: '#888', letterSpacing: '.15em', textTransform: 'uppercase' }}>
-                    Formatie
-                  </div>
-                  <div className="display" style={{ fontSize: 22 }}>{match.formation || '4-3-3'}</div>
-                </div>
-                {isUpcoming && (
-                  <span className="pill pill-ghost">Voorlopige selectie</span>
-                )}
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            marginBottom: 16,
+          }}>
+            <div>
+              <div className="mono" style={{ fontSize: 10, color: '#888', letterSpacing: '.15em', textTransform: 'uppercase' }}>
+                Formatie
               </div>
-              <Pitch lineups={match.lineups} events={match.events || []} />
-              {/* Bench */}
-              {match.lineups.filter(l => !l.is_starting && l.is_our_team).length > 0 && (
-                <div style={{ marginTop: 20 }}>
-                  <div className="mono" style={{
-                    fontSize: 10, fontWeight: 700, letterSpacing: '.15em', textTransform: 'uppercase',
-                    color: '#888', marginBottom: 10,
-                  }}>
-                    Bank Toekomst Relegem
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                    {match.lineups.filter(l => !l.is_starting && l.is_our_team).map((l, i) => (
-                      <span
-                        key={i}
-                        style={{
-                          background: 'var(--paper-2)',
-                          padding: '6px 12px',
-                          borderRadius: 2,
-                          fontSize: 13,
-                          fontWeight: 500,
-                        }}
-                      >
-                        {l.jersey_number ? `#${l.jersey_number} ` : ''}{l.player_name}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div style={{ color: '#888', textAlign: 'center', padding: 40, fontSize: 14 }}>
-              Geen opstelling beschikbaar
+              <div className="display" style={{ fontSize: 22 }}>{match.formation || '—'}</div>
             </div>
+            {isUpcoming && (
+              <span className="pill pill-ghost">Voorlopige selectie</span>
+            )}
+          </div>
+
+          {/* Pitch + player lists */}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            {/* Our team — left */}
+            <div style={{ flex: '0 0 82px' }}>
+              <div style={{
+                fontSize: 9, fontWeight: 700, color: 'var(--orange)',
+                letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 8,
+              }}>
+                Relegem
+              </div>
+              {ourStarters.map((l, i) => (
+                <div key={i} style={{ display: 'flex', gap: 5, marginBottom: 7, alignItems: 'baseline' }}>
+                  <span style={{
+                    fontFamily: 'Anton, Impact, sans-serif',
+                    fontSize: 11, color: 'var(--orange)',
+                    minWidth: 16, textAlign: 'right', flexShrink: 0,
+                  }}>
+                    {l.jersey_number ?? '–'}
+                  </span>
+                  <span style={{ fontSize: 10, color: 'var(--ink)', lineHeight: 1.2 }}>
+                    {l.player_name || '–'}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Pitch — center */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <Pitch
+                lineups={match.lineups || []}
+                events={match.events || []}
+                formation={match.formation || '4-3-3'}
+              />
+            </div>
+
+            {/* Opponent — right */}
+            <div style={{ flex: '0 0 82px', textAlign: 'right' }}>
+              <div style={{
+                fontSize: 9, fontWeight: 700, color: '#888',
+                letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 8,
+              }}>
+                {match.opponent_name || 'Tegenstander'}
+              </div>
+              {oppStarters.map((l, i) => (
+                <div key={i} style={{ display: 'flex', gap: 5, marginBottom: 7, alignItems: 'baseline', justifyContent: 'flex-end' }}>
+                  <span style={{ fontSize: 10, color: 'var(--ink)', lineHeight: 1.2 }}>
+                    {l.player_name || '–'}
+                  </span>
+                  <span style={{
+                    fontFamily: 'Anton, Impact, sans-serif',
+                    fontSize: 11, color: '#888',
+                    minWidth: 16, textAlign: 'left', flexShrink: 0,
+                  }}>
+                    {l.jersey_number ?? '–'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Bench */}
+          {(match.lineups || []).filter(l => !l.is_starting && l.is_our_team).length > 0 && (
+            <div style={{ marginTop: 20 }}>
+              <div className="mono" style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: '.15em', textTransform: 'uppercase',
+                color: '#888', marginBottom: 10,
+              }}>
+                Bank Toekomst Relegem
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {(match.lineups || []).filter(l => !l.is_starting && l.is_our_team).map((l, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      background: 'var(--paper-2)',
+                      padding: '6px 12px',
+                      borderRadius: 2,
+                      fontSize: 13,
+                      fontWeight: 500,
+                    }}
+                  >
+                    {l.jersey_number ? `#${l.jersey_number} ` : ''}{l.player_name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!(match.lineups?.length > 0) && (
+            <p style={{ textAlign: 'center', color: '#888', fontSize: 13, marginTop: 16 }}>
+              Nog geen opstelling ingevoerd
+            </p>
           )}
         </div>
       )}
