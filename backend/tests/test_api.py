@@ -29,8 +29,9 @@ def test_list_standings_empty(client):
 
 
 def test_login_invalid_credentials(client):
+    # Login uses OAuth2PasswordRequestForm (form data, username field)
     r = client.post(
-        "/api/auth/login", json={"email": "fake@fake.com", "password": "wrong"}
+        "/api/auth/login", data={"username": "fake@fake.com", "password": "wrong"}
     )
     assert r.status_code == 401
 
