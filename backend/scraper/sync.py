@@ -412,11 +412,23 @@ def sync_standings(db: Session) -> int:
         ).delete()
 
         rankings = result.get("rankings") or []
-        for rank_group in rankings:
+        # RBFA returns multiple rank_groups (e.g. per stage). Only store the
+        # group that contains Toekomst Relegem so we avoid duplicates.
+        our_group = None
+        for rg in rankings:
+            for t in rg.get("teams") or []:
+                n = t.get("name", "").lower()
+                if "relegem" in n or "toekomst" in n:
+                    our_group = rg
+                    break
+            if our_group:
+                break
+        groups_to_store = [our_group] if our_group else rankings[:1]
+
+        for rank_group in groups_to_store:
             teams = rank_group.get("teams") or []
             for team_data in teams:
                 name = team_data.get("name", "")
-                # Mark if this is Toekomst Relegem
                 is_us = "relegem" in name.lower() or "toekomst" in name.lower()
                 standing = Standing(
                     competition_id=comp.id,
@@ -424,6 +436,10 @@ def sync_standings(db: Session) -> int:
                     team_name=name,
                     team_logo_url=team_data.get("logo"),
                     position=team_data.get("position"),
+                    played=team_data.get("gamesPlayed", 0),
+                    won=team_data.get("gamesWon", 0),
+                    drawn=team_data.get("gamesDrawn", 0),
+                    lost=team_data.get("gamesLost", 0),
                     points=team_data.get("points", 0),
                     goals_for=team_data.get("goalsFor", 0),
                     goals_against=team_data.get("goalsAgainst", 0),

@@ -158,6 +158,10 @@ def get_series_rankings(series_id: str) -> dict | None:
                         name
                         position
                         points
+                        gamesPlayed
+                        gamesWon
+                        gamesDrawn
+                        gamesLost
                         goalsFor
                         goalsAgainst
                         goalDifference
