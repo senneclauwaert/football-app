@@ -83,6 +83,7 @@ function buildLineupEntries(homeSlots, awaySlots, homeBench, awayBench) {
 
 function SlotRow({ slot, index, onChange, players, isHome }) {
   const label = SLOT_LABELS[slot.role] || slot.role
+  const manualKey = slot.player_name && !slot.player_id ? '__manual__' + slot.player_name : null
   return (
     <div style={{
       display: 'grid',
@@ -97,7 +98,7 @@ function SlotRow({ slot, index, onChange, players, isHome }) {
       </span>
       {isHome && players.length > 0 ? (
         <select
-          value={slot.player_id ? String(slot.player_id) : '__manual__' + slot.player_name}
+          value={slot.player_id ? String(slot.player_id) : manualKey || ''}
           onChange={e => {
             const val = e.target.value
             if (val === '') {
@@ -116,6 +117,9 @@ function SlotRow({ slot, index, onChange, players, isHome }) {
           style={selectStyle}
         >
           <option value="">— Niet ingevuld —</option>
+          {manualKey && (
+            <option value={manualKey}>{slot.player_name}</option>
+          )}
           {players.map(p => (
             <option key={p.id} value={String(p.id)}>
               {p.jersey_number ? `#${p.jersey_number} ` : ''}{p.first_name} {p.last_name}
@@ -144,11 +148,12 @@ function SlotRow({ slot, index, onChange, players, isHome }) {
 }
 
 function BenchRow({ player, index, onChange, onRemove, players, isHome }) {
+  const manualKey = player.player_name && !player.player_id ? '__manual__' + player.player_name : null
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 52px 28px', gap: 6, alignItems: 'center', marginBottom: 6 }}>
       {isHome && players.length > 0 ? (
         <select
-          value={player.player_id ? String(player.player_id) : ''}
+          value={player.player_id ? String(player.player_id) : manualKey || ''}
           onChange={e => {
             const val = e.target.value
             if (!val) {
@@ -165,6 +170,9 @@ function BenchRow({ player, index, onChange, onRemove, players, isHome }) {
           style={selectStyle}
         >
           <option value="">— Kies speler —</option>
+          {manualKey && (
+            <option value={manualKey}>{player.player_name}</option>
+          )}
           {players.map(p => (
             <option key={p.id} value={String(p.id)}>
               {p.jersey_number ? `#${p.jersey_number} ` : ''}{p.first_name} {p.last_name}
