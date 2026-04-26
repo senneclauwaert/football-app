@@ -113,9 +113,9 @@ def get_team_calendar(team_id: str) -> list[dict]:
 
 def get_match_detail(match_id: str) -> dict | None:
     """
-    Return full match detail including events.
-    Events structure: [{home:[{kind,minute},...], away:[{kind,minute},...]}]
-    kind values: goal, owngoal, yellow, red, secondyellow, in, out
+    Return full match detail including lineup and events with player names.
+    lineup: [{home:{id,shirtNumber,firstName,lastName}, away:{...}}] — one pair per player slot (starters only).
+    events: [{home:[{kind,minute,firstName,lastName},...], away:[...]}]
     """
     data = _gql(
         """
@@ -128,9 +128,13 @@ def get_match_detail(match_id: str) -> dict | None:
                 showScore
                 homeTeam { id name }
                 awayTeam { id name }
+                lineup {
+                    home { id shirtNumber firstName lastName }
+                    away { id shirtNumber firstName lastName }
+                }
                 events {
-                    home { kind minute }
-                    away { kind minute }
+                    home { kind minute firstName lastName }
+                    away { kind minute firstName lastName }
                 }
             }
         }

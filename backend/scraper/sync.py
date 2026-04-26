@@ -14,6 +14,7 @@ from app.models import (
     Competition,
     Match,
     MatchEvent,
+    MatchLineup,
     Standing,
     AgeGroup,
     CompetitionType,
@@ -300,14 +301,13 @@ def sync_matches(db: Session) -> int:
 def sync_match_events(db: Session) -> int:
     """
     For all finished matches that have no events yet, fetch full detail
-    and populate match_events + calculate scores.
+    and populate match_events + match_lineups + calculate scores.
     Returns number of matches updated.
     """
-    # Find finished matches with no events
     finished = (
         db.query(Match)
         .filter(Match.status == MatchStatus.finished)
-        .filter(~Match.events.any())
+        .filter(~Match.lineups.any())
         .all()
     )
 
@@ -330,25 +330,56 @@ def sync_match_events(db: Session) -> int:
         match.home_score = home_score
         match.away_score = away_score
 
-        # Persist events
-        for group in events:
-            for side, is_our in [("home", match.is_home), ("away", not match.is_home)]:
-                for e in group.get(side, []):
-                    kind = _map_event_kind(e.get("kind", ""))
-                    if kind is None:
-                        continue
-                    event = MatchEvent(
+        # Persist events with player names (skip if already synced)
+        if not match.events:
+            for group in events:
+                for side, is_our in [
+                    ("home", match.is_home),
+                    ("away", not match.is_home),
+                ]:
+                    for e in group.get(side, []):
+                        kind = _map_event_kind(e.get("kind", ""))
+                        if kind is None:
+                            continue
+                        first = e.get("firstName", "")
+                        last = e.get("lastName", "")
+                        name = f"{first} {last}".strip() or None
+                        event = MatchEvent(
+                            match_id=match.id,
+                            type=kind,
+                            minute=e.get("minute"),
+                            is_our_team=is_our,
+                            player_name=name,
+                        )
+                        db.add(event)
+
+        # Persist starting lineups (home/away pairs from RBFA)
+        lineup_rows = detail.get("lineup") or []
+        for row in lineup_rows:
+            for side, is_our_team in [
+                ("home", match.is_home),
+                ("away", not match.is_home),
+            ]:
+                p = row.get(side)
+                if not p:
+                    continue
+                first = p.get("firstName", "")
+                last = p.get("lastName", "")
+                shirt = p.get("shirtNumber")
+                db.add(
+                    MatchLineup(
                         match_id=match.id,
-                        type=kind,
-                        minute=e.get("minute"),
-                        is_our_team=is_our,
+                        player_name=f"{first} {last}".strip() or None,
+                        jersey_number=int(shirt) if shirt else None,
+                        is_starting=True,
+                        is_our_team=is_our_team,
                     )
-                    db.add(event)
+                )
 
         updated += 1
 
     db.commit()
-    logger.info("Synced events for %d finished matches", updated)
+    logger.info("Synced events+lineups for %d finished matches", updated)
     return updated
 
 
