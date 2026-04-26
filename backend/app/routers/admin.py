@@ -1,3 +1,5 @@
+import time
+import logging
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -17,6 +19,9 @@ from app.models import (
 )
 from app.schemas import AdminStats, ScraperRunOut
 from app.auth import require_admin
+from scraper.sync import run_full_sync
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -36,12 +41,23 @@ def trigger_scraper(
     db.add(run)
     db.commit()
     db.refresh(run)
-    # In a real implementation, this would trigger the actual scraper
-    # For now, mark as success immediately (scraper not implemented)
-    run.status = ScraperStatus.success
-    run.duration_seconds = 0.1
-    db.commit()
-    db.refresh(run)
+
+    start = time.time()
+    try:
+        summary = run_full_sync(db)
+        run.status = ScraperStatus.success
+        run.matches_updated = summary.get("events", 0)
+        run.standings_updated = summary.get("standings", 0)
+        run.players_updated = summary.get("players", 0)
+    except Exception as e:
+        logger.exception("Scraper failed: %s", e)
+        run.status = ScraperStatus.error
+        run.error_message = str(e)
+    finally:
+        run.duration_seconds = round(time.time() - start, 1)
+        db.commit()
+        db.refresh(run)
+
     return run
 
 

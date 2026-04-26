@@ -148,6 +148,7 @@ class MatchLineupEntry(BaseModel):
 class MatchLineupOut(MatchLineupEntry):
     id: int
     match_id: int
+    photo_url: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

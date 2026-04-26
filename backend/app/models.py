@@ -284,6 +284,10 @@ class MatchLineup(Base):
     match = relationship("Match", back_populates="lineups")
     player = relationship("Player", back_populates="match_lineups")
 
+    @property
+    def photo_url(self) -> str | None:
+        return self.player.photo_url if self.player else None
+
 
 # ── STANDINGS ────────────────────────────────────────────
 

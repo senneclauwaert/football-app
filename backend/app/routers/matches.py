@@ -20,7 +20,10 @@ router = APIRouter()
 def _load_match(match_id: int, db: Session) -> Match:
     match = (
         db.query(Match)
-        .options(joinedload(Match.events), joinedload(Match.lineups))
+        .options(
+            joinedload(Match.events),
+            joinedload(Match.lineups).joinedload(MatchLineup.player),
+        )
         .filter(Match.id == match_id)
         .first()
     )
@@ -35,7 +38,10 @@ def list_matches(
     status: str | None = None,
     db: Session = Depends(get_db),
 ) -> list[MatchOut]:
-    q = db.query(Match).options(joinedload(Match.events), joinedload(Match.lineups))
+    q = db.query(Match).options(
+        joinedload(Match.events),
+        joinedload(Match.lineups).joinedload(MatchLineup.player),
+    )
     if team_id:
         q = q.filter(Match.team_id == team_id)
     if status:
