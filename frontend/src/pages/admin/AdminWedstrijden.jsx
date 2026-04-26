@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/AdminLayout'
 import Icon from '../../components/Icon'
-import { getMatches, updateMatch } from '../../api/matches'
+import { getMatches, createMatch, updateMatch, deleteMatch } from '../../api/matches'
+import { getTeams } from '../../api/teams'
+import { getCompetitions } from '../../api/standings'
 
 const STATUSES = [
   { value: 'scheduled',  label: 'Gepland' },
@@ -21,6 +24,19 @@ const statusColor = v => ({
 
 const statusLabel = v => STATUSES.find(s => s.value === v)?.label ?? v
 
+const EMPTY_FORM = {
+  match_date: '',
+  opponent_name: '',
+  is_home: true,
+  team_id: '',
+  competition_id: '',
+  matchday: '',
+  venue: '',
+  status: 'scheduled',
+  home_score: '',
+  away_score: '',
+}
+
 function Badge({ label, color }) {
   return (
     <span style={{ padding: '2px 8px', fontSize: 11, fontWeight: 600, background: color + '22', color, textTransform: 'uppercase', letterSpacing: 0.8 }}>
@@ -29,37 +45,62 @@ function Badge({ label, color }) {
   )
 }
 
-function EditPanel({ match, onSave, onClose, saving }) {
-  const [form, setForm] = useState({
-    home_score: match.home_score != null ? String(match.home_score) : '',
-    away_score: match.away_score != null ? String(match.away_score) : '',
-    status:     match.status || 'scheduled',
-  })
+function MatchPanel({ form, setForm, onSave, onClose, saving, editId }) {
   const handle = (field, value) => setForm(f => ({ ...f, [field]: value }))
 
   return (
     <div style={overlayStyle}>
-      <div style={{ ...panelStyle, width: 400 }}>
+      <div style={panelStyle}>
         <div style={panelHeaderStyle}>
-          <h2 style={panelTitleStyle}>WEDSTRIJD BEWERKEN</h2>
+          <h2 style={panelTitleStyle}>{editId ? 'WEDSTRIJD BEWERKEN' : 'NIEUWE WEDSTRIJD'}</h2>
           <button onClick={onClose} style={iconBtnStyle}><Icon name="x" size={20} /></button>
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
-          {/* Match info */}
-          <div style={{ background: '#111', border: '1px solid #2a2a2a', padding: '12px 16px', marginBottom: 24 }}>
-            <p style={{ color: '#888', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 4px' }}>
-              {match.date ? new Date(match.date).toLocaleDateString('nl-BE', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Datum onbekend'}
-            </p>
-            <p style={{ color: '#fff', fontSize: 14, fontWeight: 600, margin: 0 }}>
-              {match.is_home ? `Toekomst Relegem vs ${match.opponent}` : `${match.opponent} vs Toekomst Relegem`}
-            </p>
-          </div>
-
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <label style={labelStyle}>
+              Tegenstander
+              <input
+                value={form.opponent_name}
+                onChange={e => handle('opponent_name', e.target.value)}
+                style={inputStyle}
+                placeholder="Naam tegenstander..."
+              />
+            </label>
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <label style={labelStyle}>
-                Doelpunten thuis
+                Datum & tijd
+                <input
+                  type="datetime-local"
+                  value={form.match_date}
+                  onChange={e => handle('match_date', e.target.value)}
+                  style={inputStyle}
+                />
+              </label>
+              <label style={labelStyle}>
+                Status
+                <select value={form.status} onChange={e => handle('status', e.target.value)} style={inputStyle}>
+                  {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: '#ccc', fontSize: 13 }}>
+                <input
+                  type="checkbox"
+                  checked={form.is_home}
+                  onChange={e => handle('is_home', e.target.checked)}
+                  style={{ accentColor: '#FF6200', width: 16, height: 16 }}
+                />
+                Thuiswedstrijd
+              </label>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <label style={labelStyle}>
+                Score thuis
                 <input
                   type="number"
                   min="0"
@@ -70,7 +111,7 @@ function EditPanel({ match, onSave, onClose, saving }) {
                 />
               </label>
               <label style={labelStyle}>
-                Doelpunten uit
+                Score uit
                 <input
                   type="number"
                   min="0"
@@ -82,10 +123,42 @@ function EditPanel({ match, onSave, onClose, saving }) {
               </label>
             </div>
 
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <label style={labelStyle}>
+                Speeldag
+                <input
+                  type="number"
+                  min="1"
+                  value={form.matchday}
+                  onChange={e => handle('matchday', e.target.value)}
+                  style={inputStyle}
+                  placeholder="—"
+                />
+              </label>
+              <label style={labelStyle}>
+                Locatie
+                <input
+                  value={form.venue}
+                  onChange={e => handle('venue', e.target.value)}
+                  style={inputStyle}
+                  placeholder="Speelplaats..."
+                />
+              </label>
+            </div>
+
             <label style={labelStyle}>
-              Status
-              <select value={form.status} onChange={e => handle('status', e.target.value)} style={inputStyle}>
-                {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+              Ploeg
+              <select value={form.team_id} onChange={e => handle('team_id', e.target.value)} style={inputStyle}>
+                <option value="">— Selecteer ploeg —</option>
+                {(form._teams || []).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+            </label>
+
+            <label style={labelStyle}>
+              Competitie
+              <select value={form.competition_id} onChange={e => handle('competition_id', e.target.value)} style={inputStyle}>
+                <option value="">— Geen / Vriendschappelijk —</option>
+                {(form._competitions || []).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </label>
           </div>
@@ -93,8 +166,8 @@ function EditPanel({ match, onSave, onClose, saving }) {
 
         <div style={panelFooterStyle}>
           <button onClick={onClose} style={secondaryBtnStyle}>Annuleren</button>
-          <button onClick={() => onSave(form)} disabled={saving} style={primaryBtnStyle}>
-            {saving ? 'Opslaan...' : 'Bijwerken'}
+          <button onClick={onSave} disabled={saving} style={primaryBtnStyle}>
+            {saving ? 'Opslaan...' : editId ? 'Bijwerken' : 'Aanmaken'}
           </button>
         </div>
       </div>
@@ -103,19 +176,26 @@ function EditPanel({ match, onSave, onClose, saving }) {
 }
 
 export default function AdminWedstrijden() {
+  const navigate = useNavigate()
   const [matches, setMatches] = useState([])
+  const [teams, setTeams] = useState([])
+  const [competitions, setCompetitions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [editMatch, setEditMatch] = useState(null)
+  const [panelOpen, setPanelOpen] = useState(false)
+  const [editId, setEditId] = useState(null)
+  const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
 
   const load = () => {
     setLoading(true)
-    getMatches()
-      .then(data => {
-        const list = Array.isArray(data) ? data : (data?.items ?? [])
-        list.sort((a, b) => new Date(b.date ?? 0) - new Date(a.date ?? 0))
+    Promise.all([getMatches(), getTeams(), getCompetitions()])
+      .then(([matchData, teamData, compData]) => {
+        const list = Array.isArray(matchData) ? matchData : (matchData?.items ?? [])
+        list.sort((a, b) => new Date(b.match_date ?? b.date ?? 0) - new Date(a.match_date ?? a.date ?? 0))
         setMatches(list)
+        setTeams(teamData || [])
+        setCompetitions(compData || [])
         setLoading(false)
       })
       .catch(() => { setError('Kon wedstrijden niet laden'); setLoading(false) })
@@ -123,15 +203,50 @@ export default function AdminWedstrijden() {
 
   useEffect(load, [])
 
-  const handleSave = async (form) => {
+  const enrichForm = (base) => ({ ...base, _teams: teams, _competitions: competitions })
+
+  const openCreate = () => {
+    setForm(enrichForm(EMPTY_FORM))
+    setEditId(null)
+    setPanelOpen(true)
+  }
+
+  const openEdit = (match) => {
+    const fmtDate = d => d ? d.slice(0, 16) : ''
+    setForm(enrichForm({
+      match_date:     fmtDate(match.match_date || match.date),
+      opponent_name:  match.opponent_name || match.opponent || '',
+      is_home:        match.is_home ?? true,
+      team_id:        match.team_id ?? '',
+      competition_id: match.competition_id ?? '',
+      matchday:       match.matchday ?? '',
+      venue:          match.venue || '',
+      status:         match.status || 'scheduled',
+      home_score:     match.home_score != null ? String(match.home_score) : '',
+      away_score:     match.away_score != null ? String(match.away_score) : '',
+    }))
+    setEditId(match.id)
+    setPanelOpen(true)
+  }
+
+  const handleSave = async () => {
+    if (!form.opponent_name.trim()) return
     setSaving(true)
     try {
-      await updateMatch(editMatch.id, {
-        home_score: form.home_score !== '' ? parseInt(form.home_score) : null,
-        away_score: form.away_score !== '' ? parseInt(form.away_score) : null,
-        status:     form.status,
-      })
-      setEditMatch(null)
+      const payload = {
+        opponent_name:  form.opponent_name,
+        match_date:     form.match_date || null,
+        is_home:        form.is_home,
+        status:         form.status,
+        home_score:     form.home_score !== '' ? parseInt(form.home_score) : null,
+        away_score:     form.away_score !== '' ? parseInt(form.away_score) : null,
+        matchday:       form.matchday !== '' ? parseInt(form.matchday) : null,
+        venue:          form.venue || null,
+        team_id:        form.team_id !== '' ? parseInt(form.team_id) : (teams[0]?.id ?? 1),
+        competition_id: form.competition_id !== '' ? parseInt(form.competition_id) : null,
+      }
+      editId ? await updateMatch(editId, payload) : await createMatch(payload)
+      setPanelOpen(false)
       load()
     } catch {
       alert('Opslaan mislukt')
@@ -140,22 +255,36 @@ export default function AdminWedstrijden() {
     }
   }
 
+  const handleDelete = async (id) => {
+    if (!window.confirm('Wedstrijd verwijderen?')) return
+    try {
+      await deleteMatch(id)
+      load()
+    } catch {
+      alert('Verwijderen mislukt')
+    }
+  }
+
   const fmtScore = m => {
     if (m.home_score != null && m.away_score != null) return `${m.home_score} - ${m.away_score}`
     return '—'
   }
+
+  const fmtDate = d => d
+    ? new Date(d).toLocaleDateString('nl-BE', { day: '2-digit', month: 'short', year: 'numeric' })
+    : '—'
 
   return (
     <AdminLayout>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
           <h1 style={pageTitle}>WEDSTRIJDEN</h1>
-          <p style={pageSub}>{matches.length} wedstrijd{matches.length !== 1 ? 'en' : ''} — beheerd door de scraper</p>
+          <p style={pageSub}>{matches.length} wedstrijd{matches.length !== 1 ? 'en' : ''}</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: '#1a1a1a', border: '1px solid #2a2a2a', fontSize: 12, color: '#555' }}>
-          <Icon name="whistle" size={13} />
-          Alleen score &amp; status aanpasbaar
-        </div>
+        <button onClick={openCreate} style={primaryBtnStyle}>
+          <Icon name="plus" size={15} />
+          Nieuwe wedstrijd
+        </button>
       </div>
 
       {loading ? <Spinner /> : error ? <Empty text={error} /> : matches.length === 0 ? <Empty text="Geen wedstrijden gevonden" /> : (
@@ -170,19 +299,20 @@ export default function AdminWedstrijden() {
             </thead>
             <tbody>
               {matches.map(m => (
-                <tr key={m.id} style={{ borderBottom: '1px solid #222' }}
+                <tr
+                  key={m.id}
+                  style={{ borderBottom: '1px solid #222' }}
                   onMouseEnter={e => e.currentTarget.style.background = '#2a2a2a'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
                   <td style={{ ...tdStyle, fontSize: 12, color: '#666' }}>
-                    {m.date ? new Date(m.date).toLocaleDateString('nl-BE', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                    {fmtDate(m.match_date || m.date)}
                   </td>
-                  <td style={{ ...tdStyle, color: '#fff', fontWeight: 500 }}>{m.opponent || '—'}</td>
+                  <td style={{ ...tdStyle, color: '#fff', fontWeight: 500 }}>
+                    {m.opponent_name || m.opponent || '—'}
+                  </td>
                   <td style={tdStyle}>
-                    <Badge
-                      label={m.is_home ? 'Thuis' : 'Uit'}
-                      color={m.is_home ? '#10b981' : '#3b82f6'}
-                    />
+                    <Badge label={m.is_home ? 'Thuis' : 'Uit'} color={m.is_home ? '#10b981' : '#3b82f6'} />
                   </td>
                   <td style={{ ...tdStyle, fontFamily: 'Anton, Impact, sans-serif', color: '#FF6200', fontSize: 15 }}>
                     {fmtScore(m)}
@@ -191,7 +321,11 @@ export default function AdminWedstrijden() {
                     <Badge label={statusLabel(m.status)} color={statusColor(m.status)} />
                   </td>
                   <td style={{ ...tdStyle, textAlign: 'right' }}>
-                    <ActionBtn icon="edit" title="Score/status aanpassen" onClick={() => setEditMatch(m)} color="#3b82f6" />
+                    <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                      <ActionBtn icon="edit" title="Bewerken" onClick={() => openEdit(m)} color="#3b82f6" />
+                      <ActionBtn icon="users" title="Opstelling" onClick={() => navigate(`/admin/wedstrijden/${m.id}/opstelling`)} color="#10b981" />
+                      <ActionBtn icon="trash" title="Verwijderen" onClick={() => handleDelete(m.id)} color="#ef4444" />
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -200,12 +334,14 @@ export default function AdminWedstrijden() {
         </div>
       )}
 
-      {editMatch && (
-        <EditPanel
-          match={editMatch}
+      {panelOpen && (
+        <MatchPanel
+          form={form}
+          setForm={setForm}
           onSave={handleSave}
-          onClose={() => setEditMatch(null)}
+          onClose={() => setPanelOpen(false)}
           saving={saving}
+          editId={editId}
         />
       )}
     </AdminLayout>
@@ -239,7 +375,7 @@ function ActionBtn({ icon, title, onClick, color }) {
 }
 
 const overlayStyle = { position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end', background: 'rgba(0,0,0,0.7)' }
-const panelStyle = { width: 480, maxWidth: '100vw', height: '100vh', background: '#1a1a1a', borderLeft: '1px solid #2a2a2a', display: 'flex', flexDirection: 'column', overflow: 'hidden' }
+const panelStyle = { width: 500, maxWidth: '100vw', height: '100vh', background: '#1a1a1a', borderLeft: '1px solid #2a2a2a', display: 'flex', flexDirection: 'column', overflow: 'hidden' }
 const panelHeaderStyle = { padding: '20px 24px', borderBottom: '1px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }
 const panelTitleStyle = { fontFamily: 'Anton, Impact, sans-serif', fontSize: 18, color: '#fff', margin: 0, letterSpacing: 1 }
 const panelFooterStyle = { padding: '16px 24px', borderTop: '1px solid #2a2a2a', display: 'flex', gap: 10, justifyContent: 'flex-end' }
