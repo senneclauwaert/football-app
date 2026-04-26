@@ -300,14 +300,19 @@ def sync_matches(db: Session) -> int:
 
 def sync_match_events(db: Session) -> int:
     """
-    For all finished matches that have no events yet, fetch full detail
-    and populate match_events + match_lineups + calculate scores.
+    For all finished matches that have no lineups, OR whose own-team lineup
+    rows have null player names (RBFA sometimes omits away-team names), fetch
+    full detail and populate match_events + match_lineups + scores.
     Returns number of matches updated.
     """
+    # Re-process matches with no lineups OR with null our-team names
+    has_null_our_name = Match.lineups.any(
+        (MatchLineup.is_our_team.is_(True)) & (MatchLineup.player_name.is_(None))
+    )
     finished = (
         db.query(Match)
         .filter(Match.status == MatchStatus.finished)
-        .filter(~Match.lineups.any())
+        .filter(~Match.lineups.any() | has_null_our_name)
         .all()
     )
 
@@ -332,7 +337,7 @@ def sync_match_events(db: Session) -> int:
         match.home_score = home_score
         match.away_score = away_score
 
-        # Persist events with player names (skip if already synced)
+        # Persist events (skip if already synced)
         if not match.events:
             for group in events:
                 for side, is_our in [
@@ -355,7 +360,8 @@ def sync_match_events(db: Session) -> int:
                         )
                         db.add(event)
 
-        # Persist starting lineups (home/away pairs from RBFA)
+        # Re-build lineups from scratch so null names get fixed
+        db.query(MatchLineup).filter(MatchLineup.match_id == match.id).delete()
         lineup_rows = detail.get("lineup") or []
         for row in lineup_rows:
             for side, is_our_team in [
@@ -365,16 +371,36 @@ def sync_match_events(db: Session) -> int:
                 p = row.get(side)
                 if not p:
                     continue
-                first = p.get("firstName", "")
-                last = p.get("lastName", "")
+
+                rbfa_pid = p.get("id")
+                first = p.get("firstName") or ""
+                last = p.get("lastName") or ""
                 shirt = p.get("shirtNumber")
+                player_name = f"{first} {last}".strip() or None
+                player_id = None
+
+                # RBFA sometimes omits names for the away team — look up from DB
+                if is_our_team and rbfa_pid:
+                    db_player = (
+                        db.query(Player).filter_by(rbfa_player_id=rbfa_pid).first()
+                    )
+                    if db_player:
+                        player_name = (
+                            f"{db_player.first_name} {db_player.last_name}".strip()
+                            or player_name
+                        )
+                        player_id = db_player.id
+                        if not shirt:
+                            shirt = db_player.jersey_number
+
                 db.add(
                     MatchLineup(
                         match_id=match.id,
-                        player_name=f"{first} {last}".strip() or None,
+                        player_name=player_name,
                         jersey_number=int(shirt) if shirt else None,
                         is_starting=True,
                         is_our_team=is_our_team,
+                        player_id=player_id,
                     )
                 )
 
